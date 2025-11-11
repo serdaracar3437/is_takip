@@ -10,7 +10,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// 🔗 PostgreSQL bağlantısı (Render veya Supabase için SSL dahil)
+// 🔗 PostgreSQL bağlantısı
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 5432,
@@ -20,7 +20,7 @@ const pool = new Pool({
   ssl: { require: true, rejectUnauthorized: false },
 });
 
-// 🚀 Başlangıçta veritabanı tablolarını oluştur
+// 🚀 Veritabanı tabloları
 (async () => {
   try {
     console.log("🔄 Veritabanı bağlantısı deneniyor...");
@@ -55,7 +55,6 @@ const pool = new Pool({
       );
     `);
 
-    // 👑 Varsayılan admin hesabını oluştur (sadece 1 kere)
     const adminCheck = await pool.query(`SELECT * FROM users WHERE username='admin'`);
     if (adminCheck.rows.length === 0) {
       await pool.query(
@@ -70,15 +69,12 @@ const pool = new Pool({
   }
 })();
 
-// 🌍 Basit test rotası
-app.get("/", (req, res) => {
-  res.send("🚀 is_takip sunucusu aktif!");
-});
+// 🌍 Test rotası
+app.get("/", (req, res) => res.send("🚀 is_takip sunucusu aktif!"));
 
-// 🔐 Giriş işlemi
+// 🔐 Giriş
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
-
   try {
     const result = await pool.query(
       "SELECT * FROM users WHERE username=$1 AND password=$2",
@@ -87,10 +83,7 @@ app.post("/api/login", async (req, res) => {
 
     if (result.rows.length > 0) {
       const user = result.rows[0];
-      res.json({
-        success: true,
-        user: { id: user.id, username: user.username, role: user.role },
-      });
+      res.json({ success: true, user });
     } else {
       res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
     }
@@ -100,30 +93,29 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 👨‍💼 Yeni personel ekleme (admin için)
-app.post("/api/users", async (req, res) => {
-  const { username, password, role } = req.body;
+// 📝 Kayıt ol
+app.post("/api/signup", async (req, res) => {
+  const { username, password } = req.body;
   try {
+    const exists = await pool.query("SELECT * FROM users WHERE username=$1", [username]);
+    if (exists.rows.length > 0)
+      return res.status(400).json({ success: false, message: "Bu kullanıcı zaten var." });
+
     const result = await pool.query(
-      "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [username, password, role || "personel"]
+      "INSERT INTO users (username, password, role) VALUES ($1, $2, 'personel') RETURNING *",
+      [username, password]
     );
-    res.json(result.rows[0]);
+
+    res.json({ success: true, user: result.rows[0] });
   } catch (err) {
-    console.error("❌ Kullanıcı ekleme hatası:", err.message);
-    res.status(500).json({ error: "Kullanıcı eklenemedi" });
+    console.error("❌ Kayıt hatası:", err.message);
+    res.status(500).json({ success: false, message: "Kayıt başarısız" });
   }
 });
 
-// 👥 Tüm personel listesini getir
-app.get("/api/personel", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT id, username, role FROM users");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("❌ Personel listeleme hatası:", err.message);
-    res.status(500).json({ error: "Liste alınamadı" });
-  }
+// 🚪 Çıkış
+app.post("/api/logout", (req, res) => {
+  res.json({ success: true, message: "Çıkış yapıldı" });
 });
 
 // 🧾 Yeni iş kaydı ekleme
@@ -139,7 +131,6 @@ app.post("/api/tasks", async (req, res) => {
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
       ) RETURNING *;
     `;
-
     const values = [
       t.user_id || null,
       t.isemri_numarasi || null,
@@ -167,8 +158,5 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// 🌐 Port dinleme
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`);
-});
+app.listen(PORT, () => console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`));
