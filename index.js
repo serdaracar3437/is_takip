@@ -3,49 +3,79 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const { Pool } = require("pg");
 require("dotenv").config();
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
-
-const path = require("path");
-
-// "public" klasörünü statik dosya klasörü olarak ayarla
 app.use(express.static(path.join(__dirname, "public")));
 
-// PostgreSQL bağlantısı (Render için SSL zorunlu)
+// 🔗 PostgreSQL bağlantısı (Render veya Supabase için SSL dahil)
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: {
-    require: true, // Render'da zorunlu
-    rejectUnauthorized: false, // SSL sertifikasını doğrulama
-  },
+  ssl: { require: true, rejectUnauthorized: false },
 });
 
-// Veritabanı bağlantısını test et
+// 🚀 Başlangıçta veritabanı tablolarını oluştur
 (async () => {
   try {
-    const client = await pool.connect();
-    console.log("✅ Veritabanına başarıyla bağlanıldı!");
-    const now = await client.query("SELECT NOW()");
-    console.log("⏱️ PostgreSQL Saati:", now.rows[0].now);
-    client.release();
+    console.log("🔄 Veritabanı bağlantısı deneniyor...");
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(100) NOT NULL,
+        role VARCHAR(20) DEFAULT 'personel'
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id),
+        isemri_numarasi VARCHAR(50),
+        urun_kodu VARCHAR(50),
+        tarih DATE,
+        yapilan_faaliyet TEXT,
+        aciklama TEXT,
+        kullanilan_malzeme TEXT,
+        baslama_saati TIME,
+        bitis_saati TIME,
+        islem_adedi INT,
+        hata_kodu1 VARCHAR(50),
+        hata_sayisi1 INT,
+        hata_kodu2 VARCHAR(50),
+        hata_sayisi2 INT,
+        hata_kodu3 VARCHAR(50),
+        hata_sayisi3 INT
+      );
+    `);
+
+    // 👑 Varsayılan admin hesabını oluştur (sadece 1 kere)
+    const adminCheck = await pool.query(`SELECT * FROM users WHERE username='admin'`);
+    if (adminCheck.rows.length === 0) {
+      await pool.query(
+        `INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')`
+      );
+      console.log("👑 Yönetici hesabı oluşturuldu: admin / admin123");
+    }
+
+    console.log("✅ Tablolar kontrol edildi ve oluşturuldu.");
   } catch (err) {
-    console.error("❌ Veritabanı bağlantı hatası:", err);
+    console.error("❌ Veritabanı hazırlama hatası:", err.message);
   }
 })();
 
-// Basit test rotası
+// 🌍 Basit test rotası
 app.get("/", (req, res) => {
-  res.send("🚀 is_takip sunucusu çalışıyor!");
+  res.send("🚀 is_takip sunucusu aktif!");
 });
 
-//login kısmı
-
+// 🔐 Giriş işlemi
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -57,64 +87,61 @@ app.post("/api/login", async (req, res) => {
 
     if (result.rows.length > 0) {
       const user = result.rows[0];
-      if (user.role === "admin") {
-        res.json({ success: true, redirect: "/admin.html" });
-      } else {
-        res.json({ success: true, redirect: "/personel.html" });
-      }
+      res.json({
+        success: true,
+        user: { id: user.id, username: user.username, role: user.role },
+      });
     } else {
       res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
     }
   } catch (err) {
-    console.error("Giriş hatası:", err);
+    console.error("❌ Giriş hatası:", err.message);
     res.status(500).json({ success: false, message: "Sunucu hatası" });
   }
 });
 
-// Yeni kullanıcı kayıt endpoint'i
-app.post("/api/register", async (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).json({ error: "Kullanıcı adı ve şifre zorunludur." });
-  }
-
+// 👨‍💼 Yeni personel ekleme (admin için)
+app.post("/api/users", async (req, res) => {
+  const { username, password, role } = req.body;
   try {
-    // Aynı kullanıcı adından varsa engelle
-    const exists = await pool.query("SELECT * FROM users WHERE username=$1", [username]);
-    if (exists.rows.length > 0) {
-      return res.status(400).json({ error: "Bu kullanıcı adı zaten alınmış." });
-    }
-
-    // Yeni kullanıcı oluştur
     const result = await pool.query(
       "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *",
-      [username, password, "personel"]
+      [username, password, role || "personel"]
     );
-
-    res.json({ success: true, user: result.rows[0] });
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error("Kayıt hatası:", err);
-    res.status(500).json({ error: "Kayıt işlemi başarısız oldu" });
+    console.error("❌ Kullanıcı ekleme hatası:", err.message);
+    res.status(500).json({ error: "Kullanıcı eklenemedi" });
   }
 });
 
+// 👥 Tüm personel listesini getir
+app.get("/api/personel", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, username, role FROM users");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Personel listeleme hatası:", err.message);
+    res.status(500).json({ error: "Liste alınamadı" });
+  }
+});
 
-// Yeni görev ekleme endpoint
+// 🧾 Yeni iş kaydı ekleme
 app.post("/api/tasks", async (req, res) => {
   try {
     const t = req.body;
     const query = `
       INSERT INTO tasks (
-        isemri_numarasi, urun_kodu, tarih, yapilan_faaliyet, aciklama, kullanilan_malzeme,
-        baslama_saati, bitis_saati, islem_adedi,
+        user_id, isemri_numarasi, urun_kodu, tarih, yapilan_faaliyet, aciklama,
+        kullanilan_malzeme, baslama_saati, bitis_saati, islem_adedi,
         hata_kodu1, hata_sayisi1, hata_kodu2, hata_sayisi2, hata_kodu3, hata_sayisi3
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16
       ) RETURNING *;
     `;
 
     const values = [
+      t.user_id || null,
       t.isemri_numarasi || null,
       t.urun_kodu || null,
       t.tarih || null,
@@ -135,12 +162,12 @@ app.post("/api/tasks", async (req, res) => {
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
-    console.error("❌ Veri ekleme hatası:", err);
-    res.status(500).json({ error: "Veri kaydedilemedi", details: err.message });
+    console.error("❌ İş kaydı ekleme hatası:", err.message);
+    res.status(500).json({ error: "Veri kaydedilemedi" });
   }
 });
 
-// Render için port ayarı
+// 🌐 Port dinleme
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`);
