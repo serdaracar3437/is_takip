@@ -8,6 +8,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+const path = require("path");
+
+// "public" klasörünü statik dosya klasörü olarak ayarla
+app.use(express.static(path.join(__dirname, "public")));
+
 // PostgreSQL bağlantısı (Render için SSL zorunlu)
 const pool = new Pool({
   host: process.env.DB_HOST,
