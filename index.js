@@ -44,6 +44,8 @@ app.get("/", (req, res) => {
   res.send("🚀 is_takip sunucusu çalışıyor!");
 });
 
+//login kısmı
+
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -66,6 +68,34 @@ app.post("/api/login", async (req, res) => {
   } catch (err) {
     console.error("Giriş hatası:", err);
     res.status(500).json({ success: false, message: "Sunucu hatası" });
+  }
+});
+
+// Yeni kullanıcı kayıt endpoint'i
+app.post("/api/register", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Kullanıcı adı ve şifre zorunludur." });
+  }
+
+  try {
+    // Aynı kullanıcı adından varsa engelle
+    const exists = await pool.query("SELECT * FROM users WHERE username=$1", [username]);
+    if (exists.rows.length > 0) {
+      return res.status(400).json({ error: "Bu kullanıcı adı zaten alınmış." });
+    }
+
+    // Yeni kullanıcı oluştur
+    const result = await pool.query(
+      "INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *",
+      [username, password, "personel"]
+    );
+
+    res.json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    console.error("Kayıt hatası:", err);
+    res.status(500).json({ error: "Kayıt işlemi başarısız oldu" });
   }
 });
 
