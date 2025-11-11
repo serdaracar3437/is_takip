@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kayıt Ol</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    input { margin: 10px 0; padding: 10px; width: 90%; border: 1px solid #ccc; border-radius: 6px; }
+    button { padding: 10px 15px; margin: 5px; border: none; background: #4CAF50; color: white; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #45a049; }
+    .secondary { background: #ccc; color: black; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Yeni Hesap Oluştur</h2>
+    <input type="text" id="username" placeholder="Kullanıcı Adı" />
+    <input type="password" id="password" placeholder="Şifre" />
+    <button onclick="register()">Kayıt Ol</button>
+    <button class="secondary" onclick="window.location.href='login.html'">Girişe Dön</button>
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    async function register() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const msg = document.getElementById("msg");
+
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        msg.textContent = "✅ Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...";
+        setTimeout(() => (window.location.href = "login.html"), 1500);
+      } else {
+        msg.textContent = "❌ " + data.message;
+      }
+    }
+  </script>
+</body>
+</html>
