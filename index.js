@@ -44,6 +44,32 @@ app.get("/", (req, res) => {
   res.send("🚀 is_takip sunucusu çalışıyor!");
 });
 
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM users WHERE username=$1 AND password=$2",
+      [username, password]
+    );
+
+    if (result.rows.length > 0) {
+      const user = result.rows[0];
+      if (user.role === "admin") {
+        res.json({ success: true, redirect: "/admin.html" });
+      } else {
+        res.json({ success: true, redirect: "/personel.html" });
+      }
+    } else {
+      res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
+    }
+  } catch (err) {
+    console.error("Giriş hatası:", err);
+    res.status(500).json({ success: false, message: "Sunucu hatası" });
+  }
+});
+
+
 // Yeni görev ekleme endpoint
 app.post("/api/tasks", async (req, res) => {
   try {
