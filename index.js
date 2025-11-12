@@ -170,6 +170,18 @@ app.post("/api/logout", (req, res) => {
   return res.json({ success: true, message: "Çıkış yapıldı", redirect: "/" });
 });
 
+
+// --- TÜM KULLANICILARI LİSTELE (sadece admin için) ---
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, username, role FROM users ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Kullanıcıları listeleme hatası:', err);
+    res.status(500).json({ error: 'Kullanıcılar alınamadı', details: err.message });
+  }
+});
+
 // API için 404 (eğer /api/... ama route yoksa JSON dön)
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "API endpoint bulunamadı" });
