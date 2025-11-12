@@ -93,6 +93,12 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
+// Çıkış (Logout)
+app.post("/api/logout", (req, res) => {
+  // İleride session sistemi kurarsak burada oturumu sıfırlarız
+  res.json({ success: true, message: "Çıkış yapıldı", redirect: "/" });
+});
+
 // 📝 Kayıt ol
 app.post("/api/signup", async (req, res) => {
   const { username, password } = req.body;

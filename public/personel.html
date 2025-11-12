@@ -1,5 +1,27 @@
 <!DOCTYPE html>
 <html lang="tr">
+
+<button id="logoutBtn" class="logout-button">Çıkış Yap</button>
+
+<script>
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  if (confirm("Çıkış yapmak istediğine emin misin?")) {
+    try {
+      const response = await fetch("/api/logout", { method: "POST" });
+      const data = await response.json();
+      if (data.success) {
+        window.location.href = data.redirect; // index.html'e dön
+      } else {
+        alert("Çıkış yapılamadı!");
+      }
+    } catch (err) {
+      console.error("Logout hatası:", err);
+      alert("Sunucuya bağlanılamadı.");
+    }
+  }
+});
+</script>
+
 <head>
   <meta charset="UTF-8">
   <title>Personel Veri Girişi</title>
@@ -11,6 +33,25 @@
       margin: 0;
       padding: 20px;
     }
+
+	.logout-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #ff8c00, #800080);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+.logout-button:hover {
+  background: linear-gradient(135deg, #800080, #ff8c00);
+  transform: scale(1.05);
+}
+
 
     input, select, button {
       padding: 8px;
