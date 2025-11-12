@@ -1,91 +1,67 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <title>İş Takip - Giriş</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İş Takip Giriş</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      height: 100vh;
+      background: linear-gradient(135deg, #2c003e, #ff6f00);
+      color: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: linear-gradient(135deg, #3a0ca3, #f08a5d);
-      color: #fff;
+      height: 100vh;
+      flex-direction: column;
     }
-
-    .login-container {
-      background: rgba(0,0,0,0.6);
-      padding: 40px;
-      border-radius: 12px;
-      text-align: center;
-      width: 350px;
-    }
-
     input {
-      width: 100%;
       padding: 10px;
-      margin: 10px 0;
-      border-radius: 6px;
+      margin: 8px;
       border: none;
-      font-size: 16px;
+      border-radius: 5px;
     }
-
     button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 16px;
-      background-color: #f08a5d;
+      background-color: #ff6f00;
       border: none;
-      border-radius: 6px;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
       cursor: pointer;
-      color: #fff;
-      font-weight: bold;
     }
-
-    button:hover {
-      background-color: #e07b4f;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
+    button:hover { background-color: #e65c00; }
   </style>
 </head>
 <body>
-
-<div class="login-container">
-  <h2>İş Takip Giriş</h2>
-  <input type="text" id="username" placeholder="Kullanıcı Adı">
-  <input type="password" id="password" placeholder="Şifre">
+  <h2>İş Takip Sistemi Girişi</h2>
+  <input type="text" id="username" placeholder="Kullanıcı Adı" />
+  <input type="password" id="password" placeholder="Şifre" />
   <button onclick="login()">Giriş Yap</button>
-</div>
 
-async function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  <script>
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-  const response = await fetch("/api/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ username, password }),
-  });
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-  const data = await response.json(); // 🔥 Burada hata oluşuyor olabilir
+      const data = await res.json();
 
-  if (data.role === "admin") {
-    window.location.href = "admin.html";
-  } else if (data.role === "personel") {
-    window.location.href = "personel.html";
-  } else {
-    alert("Kullanıcı bulunamadı!");
-  }
-}
-</script>
+      if (res.status !== 200) {
+        alert(data.error || "Giriş başarısız!");
+        return;
+      }
 
+      if (data.role === "admin") {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "personel.html";
+      }
+    }
+  </script>
 </body>
 </html>

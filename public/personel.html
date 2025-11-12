@@ -1,148 +1,52 @@
 <!DOCTYPE html>
 <html lang="tr">
-
-<button id="logoutBtn" class="logout-button">Çıkış Yap</button>
-
-<script>
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-  if (confirm("Çıkış yapmak istediğine emin misin?")) {
-    try {
-      const response = await fetch("/api/logout", { method: "POST" });
-      const data = await response.json();
-      if (data.success) {
-        window.location.href = data.redirect; // index.html'e dön
-      } else {
-        alert("Çıkış yapılamadı!");
-      }
-    } catch (err) {
-      console.error("Logout hatası:", err);
-      alert("Sunucuya bağlanılamadı.");
-    }
-  }
-});
-</script>
-
 <head>
-  <meta charset="UTF-8">
-  <title>Personel Veri Girişi</title>
+  <meta charset="UTF-8" />
+  <title>Personel Ekranı</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #3a0ca3, #f08a5d);
-      color: #fff;
-      margin: 0;
-      padding: 20px;
+      background: linear-gradient(135deg, #2c003e, #ff6f00);
+      color: white;
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
     }
-
-	.logout-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #ff8c00, #800080);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-.logout-button:hover {
-  background: linear-gradient(135deg, #800080, #ff8c00);
-  transform: scale(1.05);
-}
-
-
-    input, select, button {
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 6px;
-      border: none;
-      font-size: 14px;
-      width: 100%;
+    textarea {
+      width: 80%;
+      height: 100px;
+      margin: 10px 0;
     }
-
     button {
-      background-color: #f08a5d;
-      color: #fff;
-      font-weight: bold;
+      background-color: #ff6f00;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
       cursor: pointer;
-    }
-
-    button:hover { background-color: #e07b4f; }
-
-    .form-container {
-      background: rgba(0,0,0,0.6);
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 500px;
     }
   </style>
 </head>
 <body>
+  <h2>Personel Görev Girişi</h2>
+  <input type="text" id="username" placeholder="Adınız" /><br />
+  <textarea id="task" placeholder="Görevinizi yazın..."></textarea><br />
+  <button onclick="saveTask()">Kaydet</button>
+  <a href="logout.html" style="color: white;">Çıkış Yap</a>
 
-<h2>İş Kaydı Ekle</h2>
+  <script>
+    async function saveTask() {
+      const username = document.getElementById("username").value;
+      const task = document.getElementById("task").value;
 
-<div class="form-container">
-  <input type="text" id="user_id" placeholder="Personel ID">
-  <input type="text" id="isemri_numarasi" placeholder="İş Emri Numarası">
-  <input type="text" id="urun_kodu" placeholder="Ürün Kodu">
-  <input type="date" id="tarih">
-  <input type="text" id="yapilan_faaliyet" placeholder="Yapılan Faaliyet">
-  <input type="text" id="aciklama" placeholder="Açıklama">
-  <input type="text" id="kullanilan_malzeme" placeholder="Kullanılan Malzeme">
-  <input type="time" id="baslama_saati" placeholder="Başlama Saati">
-  <input type="time" id="bitis_saati" placeholder="Bitiş Saati">
-  <input type="number" id="islem_adedi" placeholder="İşlem Adedi">
-  <input type="text" id="hata_kodu1" placeholder="Hata Kodu 1">
-  <input type="number" id="hata_sayisi1" placeholder="Hata Sayısı 1">
-  <input type="text" id="hata_kodu2" placeholder="Hata Kodu 2 (opsiyonel)">
-  <input type="number" id="hata_sayisi2" placeholder="Hata Sayısı 2 (opsiyonel)">
-  <input type="text" id="hata_kodu3" placeholder="Hata Kodu 3 (opsiyonel)">
-  <input type="number" id="hata_sayisi3" placeholder="Hata Sayısı 3 (opsiyonel)">
-  <button onclick="addTask()">Kaydet</button>
-</div>
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, task }),
+      });
 
-<script>
-async function addTask() {
-  const task = {
-    user_id: document.getElementById('user_id').value,
-    isemri_numarasi: document.getElementById('isemri_numarasi').value,
-    urun_kodu: document.getElementById('urun_kodu').value,
-    tarih: document.getElementById('tarih').value,
-    yapilan_faaliyet: document.getElementById('yapilan_faaliyet').value,
-    aciklama: document.getElementById('aciklama').value,
-    kullanilan_malzeme: document.getElementById('kullanilan_malzeme').value,
-    baslama_saati: document.getElementById('baslama_saati').value,
-    bitis_saati: document.getElementById('bitis_saati').value,
-    islem_adedi: document.getElementById('islem_adedi').value,
-    hata_kodu1: document.getElementById('hata_kodu1').value,
-    hata_sayisi1: document.getElementById('hata_sayisi1').value,
-    hata_kodu2: document.getElementById('hata_kodu2').value,
-    hata_sayisi2: document.getElementById('hata_sayisi2').value,
-    hata_kodu3: document.getElementById('hata_kodu3').value,
-    hata_sayisi3: document.getElementById('hata_sayisi3').value
-  };
-
-  try {
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(task)
-    });
-
-    const data = await res.json();
-    if(res.status === 200) {
-      alert('İş kaydı eklendi!');
-    } else {
-      alert('Hata: ' + data.error);
+      const data = await res.json();
+      alert(data.message || data.error);
     }
-  } catch(err) {
-    console.error(err);
-    alert('Sunucu hatası!');
-  }
-}
-</script>
-
+  </script>
 </body>
 </html>
