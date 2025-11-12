@@ -3,24 +3,27 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const { Pool } = require("pg");
 require("dotenv").config();
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-// PostgreSQL bağlantısı
+// 🔗 PostgreSQL bağlantısı
 const pool = new Pool({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 5432,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  ssl: { rejectUnauthorized: false } // Render/Postgres için gerekli
+  ssl: { require: true, rejectUnauthorized: false },
 });
 
-// 🌟 Sunucu Başlatıldığında Tabloyu Oluştur ve Admin'i Ekle
+// 🚀 Veritabanı tabloları
 (async () => {
   try {
+    console.log("🔄 Veritabanı bağlantısı deneniyor...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -33,87 +36,101 @@ const pool = new Pool({
     await pool.query(`
       CREATE TABLE IF NOT EXISTS tasks (
         id SERIAL PRIMARY KEY,
-        username VARCHAR(100),
+        user_id INT REFERENCES users(id),
         isemri_numarasi VARCHAR(50),
         urun_kodu VARCHAR(50),
         tarih DATE,
-        yapilan_faaliyet VARCHAR(255),
+        yapilan_faaliyet TEXT,
         aciklama TEXT,
         kullanilan_malzeme TEXT,
         baslama_saati TIME,
         bitis_saati TIME,
-        islem_adedi INTEGER,
+        islem_adedi INT,
         hata_kodu1 VARCHAR(50),
-        hata_sayisi1 INTEGER,
+        hata_sayisi1 INT,
         hata_kodu2 VARCHAR(50),
-        hata_sayisi2 INTEGER,
+        hata_sayisi2 INT,
         hata_kodu3 VARCHAR(50),
-        hata_sayisi3 INTEGER
+        hata_sayisi3 INT
       );
     `);
 
-    // 🔑 Eğer admin yoksa otomatik ekle
     const adminCheck = await pool.query(`SELECT * FROM users WHERE username='admin'`);
     if (adminCheck.rows.length === 0) {
-      await pool.query(`
-        INSERT INTO users (username, password, role)
-        VALUES ('admin', '12345', 'admin');
-      `);
-      console.log("✅ Admin kullanıcısı oluşturuldu (admin / 12345)");
-    } else {
-      console.log("🔹 Admin zaten mevcut.");
+      await pool.query(
+        `INSERT INTO users (username, password, role) VALUES ('admin', 'admin123', 'admin')`
+      );
+      console.log("👑 Yönetici hesabı oluşturuldu: admin / admin123");
     }
 
-    console.log("✅ Veritabanı bağlantısı başarılı!");
+    console.log("✅ Tablolar kontrol edildi ve oluşturuldu.");
   } catch (err) {
-    console.error("❌ Veritabanı başlatma hatası:", err);
+    console.error("❌ Veritabanı hazırlama hatası:", err.message);
   }
 })();
 
-// 🔹 Giriş İşlemi
+// 🌍 Test rotası
+app.get("/", (req, res) => res.send("🚀 is_takip sunucusu aktif!"));
+
+// 🔐 Giriş
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   try {
-    const result = await pool.query("SELECT * FROM users WHERE username=$1 AND password=$2", [username, password]);
+    const result = await pool.query(
+      "SELECT * FROM users WHERE username=$1 AND password=$2",
+      [username, password]
+    );
+
     if (result.rows.length > 0) {
       const user = result.rows[0];
-      if (user.role === "admin") {
-        res.json({ success: true, role: "admin", redirect: "/admin.html" });
-      } else {
-        res.json({ success: true, role: "personel", redirect: "/personel.html" });
-      }
+      res.json({ success: true, user });
     } else {
-      res.status(401).json({ error: "Kullanıcı adı veya şifre hatalı" });
+      res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
     }
   } catch (err) {
-    console.error("Login hatası:", err);
-    res.status(500).json({ error: "Sunucu hatası" });
+    console.error("❌ Giriş hatası:", err.message);
+    res.status(500).json({ success: false, message: "Sunucu hatası" });
   }
 });
 
-// 🔹 Admin Yeni Kullanıcı Ekleme
-app.post("/api/addUser", async (req, res) => {
-  const { username, password, role } = req.body;
+// Çıkış (Logout)
+app.post("/api/logout", (req, res) => {
+  // İleride session sistemi kurarsak burada oturumu sıfırlarız
+  res.json({ success: true, message: "Çıkış yapıldı", redirect: "/" });
+});
+
+// 📝 Kayıt ol
+app.post("/api/signup", async (req, res) => {
+  const { username, password } = req.body;
   try {
-    const result = await pool.query("INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING *", [
-      username,
-      password,
-      role || "personel"
-    ]);
-    res.json({ success: true, message: "Yeni kullanıcı eklendi", user: result.rows[0] });
+    const exists = await pool.query("SELECT * FROM users WHERE username=$1", [username]);
+    if (exists.rows.length > 0)
+      return res.status(400).json({ success: false, message: "Bu kullanıcı zaten var." });
+
+    const result = await pool.query(
+      "INSERT INTO users (username, password, role) VALUES ($1, $2, 'personel') RETURNING *",
+      [username, password]
+    );
+
+    res.json({ success: true, user: result.rows[0] });
   } catch (err) {
-    console.error("Kullanıcı ekleme hatası:", err);
-    res.status(500).json({ error: "Kullanıcı eklenemedi", details: err.message });
+    console.error("❌ Kayıt hatası:", err.message);
+    res.status(500).json({ success: false, message: "Kayıt başarısız" });
   }
 });
 
-// 🔹 Görev Kaydetme
+// 🚪 Çıkış
+app.post("/api/logout", (req, res) => {
+  res.json({ success: true, message: "Çıkış yapıldı" });
+});
+
+// 🧾 Yeni iş kaydı ekleme
 app.post("/api/tasks", async (req, res) => {
   try {
     const t = req.body;
     const query = `
       INSERT INTO tasks (
-        username, isemri_numarasi, urun_kodu, tarih, yapilan_faaliyet, aciklama,
+        user_id, isemri_numarasi, urun_kodu, tarih, yapilan_faaliyet, aciklama,
         kullanilan_malzeme, baslama_saati, bitis_saati, islem_adedi,
         hata_kodu1, hata_sayisi1, hata_kodu2, hata_sayisi2, hata_kodu3, hata_sayisi3
       ) VALUES (
@@ -121,24 +138,31 @@ app.post("/api/tasks", async (req, res) => {
       ) RETURNING *;
     `;
     const values = [
-      t.username, t.isemri_numarasi, t.urun_kodu, t.tarih, t.yapilan_faaliyet, t.aciklama,
-      t.kullanilan_malzeme, t.baslama_saati, t.bitis_saati, t.islem_adedi,
-      t.hata_kodu1 || null, t.hata_sayisi1 || null, t.hata_kodu2 || null, t.hata_sayisi2 || null,
-      t.hata_kodu3 || null, t.hata_sayisi3 || null
+      t.user_id || null,
+      t.isemri_numarasi || null,
+      t.urun_kodu || null,
+      t.tarih || null,
+      t.yapilan_faaliyet || null,
+      t.aciklama || null,
+      t.kullanilan_malzeme || null,
+      t.baslama_saati || null,
+      t.bitis_saati || null,
+      parseInt(t.islem_adedi) || 0,
+      t.hata_kodu1 || null,
+      parseInt(t.hata_sayisi1) || 0,
+      t.hata_kodu2 || null,
+      parseInt(t.hata_sayisi2) || 0,
+      t.hata_kodu3 || null,
+      parseInt(t.hata_sayisi3) || 0,
     ];
+
     const result = await pool.query(query, values);
-    res.json(result.rows[0]);
+    res.json({ success: true, data: result.rows[0] });
   } catch (err) {
-    console.error("Veri ekleme hatası:", err);
-    res.status(500).json({ error: "Veri kaydedilemedi", details: err.message });
+    console.error("❌ İş kaydı ekleme hatası:", err.message);
+    res.status(500).json({ error: "Veri kaydedilemedi" });
   }
 });
 
-// 🔹 Logout (Çıkış)
-app.post("/api/logout", (req, res) => {
-  res.json({ success: true, message: "Çıkış yapıldı", redirect: "/" });
-});
-
-// Sunucu başlat
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Sunucu ${PORT} portunda çalışıyor...`));
+app.listen(PORT, () => console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`));
