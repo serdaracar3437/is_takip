@@ -182,6 +182,17 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// --- SADECE PERSONEL LİSTESİ (admin için görünür) ---
+app.get('/api/personel', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT id, username, role FROM users WHERE role = 'personel' ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Personel listeleme hatası:', err);
+    res.status(500).json({ error: 'Personel listesi alınamadı', details: err.message });
+  }
+});
+
 // API için 404 (eğer /api/... ama route yoksa JSON dön)
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "API endpoint bulunamadı" });
