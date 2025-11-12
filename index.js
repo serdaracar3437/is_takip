@@ -177,9 +177,10 @@ app.use("/api", (req, res) => {
 
 // Eğer istek statik dosya veya gerçek endpoint değilse index.html dön (SPA davranışı)
 // **DİKKAT:** Bu satır API rotalarından SONRA gelmeli, aksi halde /api/* isteklerini yakalar.
-app.get("*", (req, res) => {
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
 
 // Server start
 const PORT = process.env.PORT || 3000;
