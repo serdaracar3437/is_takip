@@ -27,26 +27,78 @@
   </style>
 </head>
 <body>
-  <h2>Personel Görev Girişi</h2>
-  <input type="text" id="username" placeholder="Adınız" /><br />
-  <textarea id="task" placeholder="Görevinizi yazın..."></textarea><br />
-  <button onclick="saveTask()">Kaydet</button>
-  <a href="logout.html" style="color: white;">Çıkış Yap</a>
+  <h2>Görev Girişi</h2>
 
-  <script>
-    async function saveTask() {
-      const username = document.getElementById("username").value;
-      const task = document.getElementById("task").value;
+<input type="text" id="username" placeholder="Adınız" /><br>
 
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, task }),
-      });
+<input type="text" id="isemri_numarasi" placeholder="İş Emri Numarası"><br>
 
-      const data = await res.json();
-      alert(data.message || data.error);
-    }
+<input type="text" id="urun_kodu" placeholder="Ürün Kodu"><br>
+
+<input type="date" id="tarih"><br>
+
+<input type="text" id="yapilan_faaliyet" placeholder="Yapılan Faaliyet"><br>
+
+<textarea id="aciklama" placeholder="Açıklama"></textarea><br>
+
+<input type="text" id="kullanilan_malzeme" placeholder="Kullanılan Malzeme"><br>
+
+<label>Başlama Saati</label>
+<input type="time" id="baslama_saati"><br>
+
+<label>Bitiş Saati</label>
+<input type="time" id="bitis_saati"><br>
+
+<input type="number" id="islem_adedi" placeholder="İşlem Adedi"><br>
+
+<hr>
+
+<h3>Hata Kodları</h3>
+
+<input type="text" id="hata_kodu1" placeholder="Hata Kodu 1">
+<input type="number" id="hata_sayisi1" placeholder="Hata Sayısı 1"><br>
+
+<input type="text" id="hata_kodu2" placeholder="Hata Kodu 2">
+<input type="number" id="hata_sayisi2" placeholder="Hata Sayısı 2"><br>
+
+<input type="text" id="hata_kodu3" placeholder="Hata Kodu 3">
+<input type="number" id="hata_sayisi3" placeholder="Hata Sayısı 3"><br>
+
+<button onclick="saveTask()">Kaydet</button>
+<a href="logout.html">Çıkış Yap</a>
+
+<script>
+async function saveTask() {
+  const data = {
+    username: document.getElementById("username").value,
+    isemri_numarasi: document.getElementById("isemri_numarasi").value,
+    urun_kodu: document.getElementById("urun_kodu").value,
+    tarih: document.getElementById("tarih").value,
+    yapilan_faaliyet: document.getElementById("yapilan_faaliyet").value,
+    aciklama: document.getElementById("aciklama").value,
+    kullanilan_malzeme: document.getElementById("kullanilan_malzeme").value,
+    baslama_saati: document.getElementById("baslama_saati").value,
+    bitis_saati: document.getElementById("bitis_saati").value,
+    islem_adedi: document.getElementById("islem_adedi").value,
+    hata_kodu1: document.getElementById("hata_kodu1").value,
+    hata_sayisi1: document.getElementById("hata_sayisi1").value,
+    hata_kodu2: document.getElementById("hata_kodu2").value,
+    hata_sayisi2: document.getElementById("hata_sayisi2").value,
+    hata_kodu3: document.getElementById("hata_kodu3").value,
+    hata_sayisi3: document.getElementById("hata_sayisi3").value
+  };
+
+  const res = await fetch("/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  const result = await res.json();
+  alert(result.success ? "Görev kaydedildi!" : "Hata: " + result.error);
+}
+</script>
+
   </script>
 </body>
 </html>

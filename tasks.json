@@ -1,0 +1,48 @@
+// JSON dosyası yolu
+const TASKS_FILE = path.join(process.cwd(),"tasks.json");
+
+// Kayıt ekleme (JSON)
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const t = req.body || {};
+
+    // Dosyayı oku
+    let tasks = [];
+    if (fs.existsSync(TASKS_FILE)) {
+      tasks = JSON.parse(fs.readFileSync(TASKS_FILE, "utf8"));
+    }
+
+    // Yeni kayıt
+    const newTask = {
+      id: Date.now(),
+      username: t.username || "",
+      isemri_numarasi: t.isemri_numarasi || "",
+      urun_kodu: t.urun_kodu || "",
+      tarih: t.tarih || "",
+      yapilan_faaliyet: t.yapilan_faaliyet || "",
+      aciklama: t.aciklama || "",
+      kullanilan_malzeme: t.kullanilan_malzeme || "",
+      baslama_saati: t.baslama_saati || "",
+      bitis_saati: t.bitis_saati || "",
+      islem_adedi: t.islem_adedi ? Number(t.islem_adedi) : null,
+      hata_kodu1: t.hata_kodu1 || "",
+      hata_sayisi1: t.hata_sayisi1 ? Number(t.hata_sayisi1) : null,
+      hata_kodu2: t.hata_kodu2 || "",
+      hata_sayisi2: t.hata_sayisi2 ? Number(t.hata_sayisi2) : null,
+      hata_kodu3: t.hata_kodu3 || "",
+      hata_sayisi3: t.hata_sayisi3 ? Number(t.hata_sayisi3) : null
+    };
+
+    // Ekle
+    tasks.push(newTask);
+
+    // JSON dosyasına yaz
+    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
+
+    return res.json({ success: true, task: newTask });
+
+  } catch (err) {
+    console.error("Görev ekleme hatası:", err);
+    return res.status(500).json({ success: false, error: "Görev kaydedilemedi", details: err.message });
+  }
+});
