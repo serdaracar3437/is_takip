@@ -1,16 +1,13 @@
 // JSON dosyası yolu
-const TASKS_FILE = path.join(process.cwd(),"tasks.json");
+const TASKS_FILE = path.join(process.cwd(), "data", "tasks.json");
 
 // Kayıt ekleme (JSON)
 app.post("/api/tasks", async (req, res) => {
   try {
     const t = req.body || {};
 
-    // Dosyayı oku
-    let tasks = [];
-    if (fs.existsSync(TASKS_FILE)) {
-      tasks = JSON.parse(fs.readFileSync(TASKS_FILE, "utf8"));
-    }
+    // JSON dosyasını oku
+    let tasks = JSON.parse(fs.readFileSync(TASKS_FILE, "utf8"));
 
     // Yeni kayıt
     const newTask = {
@@ -33,16 +30,18 @@ app.post("/api/tasks", async (req, res) => {
       hata_sayisi3: t.hata_sayisi3 ? Number(t.hata_sayisi3) : null
     };
 
-    // Ekle
+    // Kaydet
     tasks.push(newTask);
-
-    // JSON dosyasına yaz
     fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
 
     return res.json({ success: true, task: newTask });
 
   } catch (err) {
     console.error("Görev ekleme hatası:", err);
-    return res.status(500).json({ success: false, error: "Görev kaydedilemedi", details: err.message });
+    return res.status(500).json({
+      success: false,
+      error: "Görev kaydedilemedi",
+      details: err.message
+    });
   }
 });

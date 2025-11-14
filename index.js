@@ -14,34 +14,60 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
- // HTML dosyaları için
 
-// Veri dosyamız
-const dataPath = path.join(__dirname, "data.json");
+//
+// =====================================================
+//   JSON DOSYALARININ KESİNLİKLE OLUŞMASINI SAĞLAYAN KOD
+// =====================================================
+//
 
-// Eğer data.json yoksa oluştur
+// "data" klasörü oluştur (yoksa)
+const DATA_DIR = path.join(__dirname, "data");
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR);
+}
+
+// "data.json" yolu
+const dataPath = path.join(DATA_DIR, "data.json");
+
+// Eğer data.json yoksa varsayılan içerikle oluştur
 if (!fs.existsSync(dataPath)) {
   fs.writeFileSync(
     dataPath,
-    JSON.stringify({
-      users: [
-        { username: "admin", password: "1234", role: "admin" },
-        { username: "personel1", password: "1234", role: "personel" },
-      ],
-      tasks: [],
-    })
+    JSON.stringify(
+      {
+        users: [
+          { username: "admin", password: "1234", role: "admin" },
+          { username: "personel1", password: "1234", role: "personel" },
+        ],
+        tasks: [],
+      },
+      null,
+      2
+    ),
+    "utf8"
   );
 }
 
-// JSON dosyasını oku
+//
+// ================================
+//   JSON Okuma & Yazma Fonksiyonları
+// ================================
+//
+
 function readData() {
   return JSON.parse(fs.readFileSync(dataPath, "utf8"));
 }
 
-// JSON dosyasını yaz
 function writeData(data) {
-  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
 }
+
+//
+// ==============================
+//            API’LER
+// ==============================
+//
 
 // 🔹 LOGIN API
 app.post("/api/login", (req, res) => {
@@ -59,7 +85,7 @@ app.post("/api/login", (req, res) => {
   res.json({ role: user.role, username: user.username });
 });
 
-// 🔹 Kullanıcı ekleme (sadece admin)
+// 🔹 Kullanıcı ekleme (admin)
 app.post("/api/addUser", (req, res) => {
   const { username, password, role } = req.body;
   const data = readData();
@@ -69,6 +95,7 @@ app.post("/api/addUser", (req, res) => {
 
   data.users.push({ username, password, role });
   writeData(data);
+
   res.json({ message: "Kullanıcı eklendi!" });
 });
 
@@ -79,30 +106,39 @@ app.get("/api/personel", (req, res) => {
   res.json(personeller);
 });
 
-// 🔹 Görev ekleme (personel için)
+// 🔹 Görev ekleme (personel)
 app.post("/api/tasks", (req, res) => {
   const { username, task } = req.body;
   const data = readData();
 
-  data.tasks.push({ username, task, date: new Date().toISOString() });
+  data.tasks.push({
+    id: Date.now(),
+    username,
+    task,
+    date: new Date().toISOString(),
+  });
+
   writeData(data);
+
   res.json({ message: "Görev kaydedildi!" });
 });
 
-// 🔹 Tüm görevleri listeleme (admin için)
+// 🔹 Görevleri listeleme
 app.get("/api/tasks", (req, res) => {
   const data = readData();
   res.json(data.tasks);
 });
 
-// 🔹 Logout yönlendirmesi
+// 🔹 Logout
 app.get("/logout", (req, res) => {
   res.sendFile(path.join(__dirname, "logout.html"));
 });
 
-// 🔹 404 fallback
+// 🔹 Ana sayfa
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.listen(PORT, () => console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`));
+app.listen(PORT, () =>
+  console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`)
+);
