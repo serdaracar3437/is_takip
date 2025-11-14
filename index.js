@@ -13,7 +13,8 @@ const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname)); // HTML dosyaları için
+app.use(express.static(path.join(__dirname, "public")));
+ // HTML dosyaları için
 
 // Veri dosyamız
 const dataPath = path.join(__dirname, "data.json");
