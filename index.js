@@ -127,9 +127,6 @@ app.get("/", (req, res) => {
 // EXPRESS 5 FALLBACK — SADECE GET!
 // POST/PUT/DELETE ETKİLENMEZ
 // ==============================
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/index.html"));
-});
 
 app.listen(PORT, () =>
   console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`)
