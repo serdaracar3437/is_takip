@@ -1,5 +1,18 @@
+
+
+
 // JSON dosyası yolu
 const TASKS_FILE = path.join(process.cwd(), "data", "data.json");
+
+
+{
+  "users": [
+    { "username": "admin", "password": "1234", "role": "admin" },
+    { "username": "personel1", "password": "1234", "role": "personel" }
+  ],
+  "tasks": []
+}
+
 
 // Kayıt ekleme (JSON)
 app.post("/api/tasks", async (req, res) => {
