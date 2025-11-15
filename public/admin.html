@@ -1,128 +1,118 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Yönetici Paneli</title>
-  <style>
-    body {
-      font-family: Arial;
-      background: linear-gradient(135deg, #2c003e, #ff6f00);
-      color: white;
-      padding: 30px;
-    }
-    input, select {
-      margin: 5px;
-      padding: 8px;
-      border: none;
-      border-radius: 5px;
-    }
-    button {
-      background-color: #ff6f00;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover { background-color: #e65c00; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yönetici Paneli</title>
+<style>
+  :root{--bg:#2c003e;--accent:#ff6f00}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter, "Segoe UI", Arial; background: linear-gradient(135deg,var(--bg),#36003b); color:white; padding:18px;}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{margin:0 0 14px 0}
+  .card{background:rgba(255,255,255,0.04);padding:14px;border-radius:10px;margin-bottom:14px}
+  input,select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:white}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;color:white;cursor:pointer;font-weight:600}
+  ul{list-style:none;padding:0;margin:8px 0}
+  li{padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.08);margin-bottom:6px}
+  .muted{color:rgba(255,255,255,0.75);font-size:13px}
+</style>
 </head>
 <body>
-  <h2>Yönetici Paneli</h2>
+  <div class="wrap">
+    <h1>Yönetici Paneli</h1>
 
-<h3>Kullanıcı Ekle</h3>
+    <section class="card" aria-labelledby="adduser">
+      <h2 id="adduser">Kullanıcı Ekle</h2>
+      <div class="row" style="align-items:center">
+        <input id="newUser" placeholder="Kullanıcı adı (örn: ahmet01)" />
+        <input id="newPass" type="password" placeholder="Şifre" />
+        <select id="newRole"><option value="personel">Personel</option><option value="admin">Admin</option></select>
+        <button class="btn" onclick="addUser()">Kullanıcı Ekle</button>
+      </div>
+      <p class="muted">Kullanıcılar veritabanına eklenecektir.</p>
+    </section>
 
-<div style="
-  background: rgba(255,255,255,0.12);
-  padding: 15px;
-  border-radius: 8px;
-  max-width: 350px;
-">
-  <label>Kullanıcı Adı</label><br />
-  <input type="text" id="newUser" placeholder="Örn: ahmet123" /><br />
+    <section class="card">
+      <h2>Personel Listesi</h2>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <button class="btn" onclick="loadPersonel()">Yenile</button>
+        <a class="btn" href="tasks.html" style="background:#3b0f4b">Görev Listesi</a>
+      </div>
+      <ul id="personelList"></ul>
+    </section>
 
-  <label>Şifre</label><br />
-  <div style="display: flex; align-items: center;">
-    <input type="password" id="newPass" placeholder="Şifre" style="flex: 1;" />
-    <button onclick="togglePassword()" style="margin-left: 5px;">👁</button>
+    <section class="card">
+      <h2>Son Görevler</h2>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <button class="btn" onclick="loadTasks()">Yükle</button>
+      </div>
+      <ul id="taskList"></ul>
+    </section>
+
+    <div style="margin-top:12px">
+      <a href="logout.html" style="color:white">Çıkış Yap</a>
+    </div>
   </div>
 
-  <label>Rol</label><br />
-  <select id="newRole">
-    <option value="personel">Personel</option>
-    <option value="admin">Admin</option>
-  </select>
+<script>
+async function addUser(){
+  const user = document.getElementById("newUser").value.trim();
+  const pass = document.getElementById("newPass").value.trim();
+  const role = document.getElementById("newRole").value;
+  if(!user || !pass){ alert("Kullanıcı ve şifre gerekli."); return; }
 
-  <button onclick="addUser()" style="margin-top: 10px; width: 100%;">
-    ➕ Kullanıcı Ekle
-  </button>
-</div>
-
-  <h3>Personel Listesi</h3>
-  <button onclick="loadPersonel()">Listele</button>
-  <ul id="personelList"></ul>
-
-  <h3>Görevler</h3>
-  <button onclick="loadTasks()">Görevleri Gör</button>
-  <ul id="taskList"></ul>
-
-  <a href="logout.html" style="color: white;">Çıkış Yap</a>
-
-  <script>
-     function togglePassword() {
-    const passInput = document.getElementById("newPass");
-    passInput.type = passInput.type === "password" ? "text" : "password";
-  }
-
-  async function addUser() {
-    const username = document.getElementById("newUser").value.trim();
-    const password = document.getElementById("newPass").value.trim();
-    const role = document.getElementById("newRole").value;
-
-    if (!username || !password) {
-      alert("❗ Kullanıcı adı ve şifre boş olamaz.");
-      return;
-    }
-
+  try{
     const res = await fetch("/api/addUser", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, role }),
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ username:user, password:pass, role })
     });
-
-    const data = await res.json();
-
-    if (res.status === 200) {
-      alert("✅ Kullanıcı eklendi: " + username);
-      document.getElementById("newUser").value = "";
-      document.getElementById("newPass").value = "";
-    } else {
-      alert("❌ Hata: " + (data.error || "Eklenemedi"));
-    }
+    const json = await res.json();
+    if(!res.ok) return alert("Hata: " + (json.error || "Eklenemedi"));
+    alert("Kullanıcı eklendi: " + user);
+    document.getElementById("newUser").value = "";
+    document.getElementById("newPass").value = "";
+  } catch(err){
+    alert("İstek hatası: " + err.message);
   }
+}
 
-    async function loadPersonel() {
-      const res = await fetch("/api/personel");
-      const data = await res.json();
-      const list = document.getElementById("personelList");
-      list.innerHTML = "";
-      data.forEach((p) => {
-        const li = document.createElement("li");
-        li.textContent = `${p.username} (${p.role})`;
-        list.appendChild(li);
-      });
-    }
+async function loadPersonel(){
+  try{
+    const res = await fetch("/api/personel");
+    const data = await res.json();
+    const list = document.getElementById("personelList");
+    list.innerHTML = "";
+    if(!Array.isArray(data)){ list.textContent = "Personel alınamadı"; return; }
+    data.forEach(u=>{
+      const li = document.createElement("li");
+      li.textContent = `${u.username} (${u.role})`;
+      list.appendChild(li);
+    });
+  }catch(err){ alert("Yükleme hatası: " + err.message); }
+}
 
-    async function loadTasks() {
-      const res = await fetch("/api/tasks");
-      const data = await res.json();
-      const list = document.getElementById("taskList");
-      list.innerHTML = "";
-      data.forEach((t) => {
-        const li = document.createElement("li");
-        li.textContent = `${t.username}: ${t.task}`;
-        list.appendChild(li);
-      });
-    }
-  </script>
+async function loadTasks(){
+  try{
+    const res = await fetch("/api/tasks");
+    const data = await res.json();
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+    if(!Array.isArray(data)){ list.textContent = "Görevler alınamadı"; return; }
+    data.slice(0,50).forEach(t=>{
+      const li = document.createElement("li");
+      const d = t.tarih || new Date(t.created_at || Date.now()).toLocaleDateString();
+      li.innerHTML = `<strong>${t.username}</strong> — ${t.isemri_numarasi || "-"} — ${d} <div style="color:#ddd;font-size:13px;margin-top:6px">${(t.yapilan_faaliyet||"-")} | Adet: ${t.islem_adedi||"-"}</div>`;
+      list.appendChild(li);
+    });
+  } catch(err){ alert("Görev yükleme hatası: " + err.message); }
+}
+
+// sayfa açıldığında personel listesi ve görevleri çek
+loadPersonel();
+loadTasks();
+</script>
 </body>
 </html>
