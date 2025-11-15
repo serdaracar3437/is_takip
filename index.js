@@ -134,15 +134,16 @@ app.get("/logout", (req, res) => {
   res.sendFile(path.join(__dirname, "public/logout.html"));
 });
 
-// 🔹 Ana sayfa
+// 🔹 Ana sayfa// Ana sayfa
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
-// 🔹 Diğer tüm istekler
-app.get("*", (req, res) => {
+// Express 5 fallback — TÜM HTML istekleri için
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "public/index.html"));
 });
+
 
 app.listen(PORT, () =>
   console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`)
