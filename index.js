@@ -106,15 +106,26 @@ app.post("/api/tasks", async (req, res) => {
 // =======================
 
 app.get("/api/tasks", async (req, res) => {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .order("id", { ascending: false });
+  try {
+    const { username, isemri_numarasi, tarih } = req.query;
 
-  if (error) return res.status(500).json({ error: error.message });
+    let query = supabase.from("tasks").select("*");
 
-  res.json(data);
+    if (username) query = query.ilike("username", `%${username}%`);
+    if (isemri_numarasi) query = query.ilike("isemri_numarasi", `%${isemri_numarasi}%`);
+    if (tarih) query = query.eq("tarih", tarih);
+
+    const { data, error } = await query.order("id", { ascending: false });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
 });
+
+
 
 // =======================
 // HTML
