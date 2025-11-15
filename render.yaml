@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: is-takip-backend
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "node index.js"
+    envVars:
+      - key: SUPABASE_URL
+        value: "https://siwqsbtgurogjwgrjroo.supabase.co"
+      - key: SUPABASE_ANON_KEY
+        value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpd3FzYnRndXJvZ2p3Z3Jqcm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMTQ0MDcsImV4cCI6MjA3ODc5MDQwN30.erN-uiR-J3VoGrvRHwmyZ3Rkop1zrEiQQRJeOQqYfOg"
