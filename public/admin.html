@@ -29,14 +29,33 @@
 <body>
   <h2>Yönetici Paneli</h2>
 
-  <h3>Kullanıcı Ekle</h3>
-  <input type="text" id="newUser" placeholder="Kullanıcı Adı" />
-  <input type="password" id="newPass" placeholder="Şifre" />
+<h3>Kullanıcı Ekle</h3>
+
+<div style="
+  background: rgba(255,255,255,0.12);
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 350px;
+">
+  <label>Kullanıcı Adı</label><br />
+  <input type="text" id="newUser" placeholder="Örn: ahmet123" /><br />
+
+  <label>Şifre</label><br />
+  <div style="display: flex; align-items: center;">
+    <input type="password" id="newPass" placeholder="Şifre" style="flex: 1;" />
+    <button onclick="togglePassword()" style="margin-left: 5px;">👁</button>
+  </div>
+
+  <label>Rol</label><br />
   <select id="newRole">
     <option value="personel">Personel</option>
     <option value="admin">Admin</option>
   </select>
-  <button onclick="addUser()">Ekle</button>
+
+  <button onclick="addUser()" style="margin-top: 10px; width: 100%;">
+    ➕ Kullanıcı Ekle
+  </button>
+</div>
 
   <h3>Personel Listesi</h3>
   <button onclick="loadPersonel()">Listele</button>
@@ -49,19 +68,37 @@
   <a href="logout.html" style="color: white;">Çıkış Yap</a>
 
   <script>
-    async function addUser() {
-      const username = document.getElementById("newUser").value;
-      const password = document.getElementById("newPass").value;
-      const role = document.getElementById("newRole").value;
+     function togglePassword() {
+    const passInput = document.getElementById("newPass");
+    passInput.type = passInput.type === "password" ? "text" : "password";
+  }
 
-      const res = await fetch("/api/addUser", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, role }),
-      });
-      const data = await res.json();
-      alert(data.message || data.error);
+  async function addUser() {
+    const username = document.getElementById("newUser").value.trim();
+    const password = document.getElementById("newPass").value.trim();
+    const role = document.getElementById("newRole").value;
+
+    if (!username || !password) {
+      alert("❗ Kullanıcı adı ve şifre boş olamaz.");
+      return;
     }
+
+    const res = await fetch("/api/addUser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password, role }),
+    });
+
+    const data = await res.json();
+
+    if (res.status === 200) {
+      alert("✅ Kullanıcı eklendi: " + username);
+      document.getElementById("newUser").value = "";
+      document.getElementById("newPass").value = "";
+    } else {
+      alert("❌ Hata: " + (data.error || "Eklenemedi"));
+    }
+  }
 
     async function loadPersonel() {
       const res = await fetch("/api/personel");
