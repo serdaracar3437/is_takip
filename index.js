@@ -73,13 +73,66 @@ app.get("/api/personel", async (req, res) => {
 // =======================
 
 app.post("/api/tasks", async (req, res) => {
-  const task = req.body;
+  try {
+    const {
+      username,
+      isemri_numarasi,
+      urun_kodu,
+      tarih,
+      yapilan_faaliyet,
+      aciklama,
+      kullanilan_malzeme,
+      baslama_saati,
+      bitis_saati,
+      islem_adedi,
+      hata_kodu1,
+      hata_sayisi1,
+      hata_kodu2,
+      hata_sayisi2,
+      hata_kodu3,
+      hata_sayisi3
+    } = req.body;
 
-  const { error } = await supabase.from("tasks").insert([task]);
+    // Zorunlu alan kontrolü
+    if (!username) {
+      return res.status(400).json({ error: "Kullanıcı adı boş olamaz" });
+    }
 
-  if (error) return res.status(500).json({ error: error.message });
+    // Supabase insert
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert([
+        {
+          username,
+          isemri_numarasi,
+          urun_kodu,
+          tarih,
+          yapilan_faaliyet,
+          aciklama,
+          kullanilan_malzeme,
+          baslama_saati,
+          bitis_saati,
+          islem_adedi: islem_adedi ? Number(islem_adedi) : null,
+          hata_kodu1,
+          hata_sayisi1: hata_sayisi1 ? Number(hata_sayisi1) : null,
+          hata_kodu2,
+          hata_sayisi2: hata_sayisi2 ? Number(hata_sayisi2) : null,
+          hata_kodu3,
+          hata_sayisi3: hata_sayisi3 ? Number(hata_sayisi3) : null
+        }
+      ]);
 
-  res.json({ success: true });
+    if (error) {
+      console.log("Supabase INSERT ERROR:", error);
+      return res.status(500).json({ error: "Kayıt sırasında hata oluştu" });
+    }
+
+    res.json({ message: "Görev başarıyla kaydedildi", data });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
 });
 
 // =======================
