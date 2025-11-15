@@ -1,102 +1,80 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Görev Listesi</title>
-<style>
-  :root{--muted:#6b7280;--accent:#ff6f00;--card:#fff}
-  body{margin:0;font-family:Inter, "Segoe UI", Arial;background:#f4f6fc;color:#111}
-  .header{background:#2c003e;color:#fff;padding:18px;text-align:center;font-weight:700}
-  .wrap{max-width:1100px;margin:18px auto;padding:0 12px}
-  .filter{display:flex;gap:8px;flex-wrap:wrap;background:#fff;padding:14px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.06)}
-  .filter input{padding:10px;border:1px solid #e6e9ef;border-radius:8px;width:220px}
-  .filter button{background:var(--accent);border:none;color:white;padding:10px 14px;border-radius:8px;cursor:pointer}
-  .table{margin-top:14px;background:#fff;border-radius:10px;padding:0;box-shadow:0 6px 20px rgba(0,0,0,0.06);overflow:auto}
-  table{width:100%;border-collapse:collapse}
-  th{background:#ff6f00;color:#fff;padding:12px;text-align:left}
-  td{padding:12px;border-top:1px solid #f3f4f6}
-  tr:hover td{background:#fff7ed}
-  .back{display:inline-block;margin:14px 0;padding:8px 12px;background:#2c003e;color:#fff;border-radius:8px;text-decoration:none}
-  @media (max-width:800px){ .filter input{width:100%} }
-</style>
-</head>
-<body>
-  <div class="header">Görev Listesi</div>
-  <div class="wrap">
-    <div class="filter">
-      <input id="f_username" placeholder="Personel (kullanıcı adı)" />
-      <input id="f_isemri" placeholder="İş Emri No" />
-      <input id="f_tarih" type="date" />
-      <button onclick="loadTasks()">Filtrele</button>
-      <a class="back" href="personel.html">Yeni Görev Oluştur</a>
-    </div>
+<div class="header">Görev Listesi</div>
+<div class="wrap">
 
-    <div class="table" id="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Personel</th>
-            <th>İş Emri</th>
-            <th>Ürün</th>
-            <th>Tarih</th>
-            <th>Faaliyet</th>
-            <th>Adet</th>
-            <th>Hatalar</th>
-          </tr>
-        </thead>
-        <tbody id="taskTable"></tbody>
-      </table>
-    </div>
-  </div>
+
+<div class="filter">
+<input id="f_username" placeholder="Personel" />
+<input id="f_isemri" placeholder="İş Emri No" />
+<input id="f_tarih" type="date" />
+<button onclick="loadTasks()">Filtrele</button>
+<a href="personel.html" style="background:#2c003e;color:white;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">Yeni Görev</a>
+</div>
+
+
+<table>
+<thead>
+<tr>
+<th>Personel</th>
+<th>İş Emri</th>
+<th>Ürün</th>
+<th>Tarih</th>
+<th>Faaliyet</th>
+<th>Adet</th>
+<th>Hata</th>
+</tr>
+</thead>
+<tbody id="taskTable"></tbody>
+</table>
+
+
+</div>
+
 
 <script>
 async function loadTasks(){
-  const q = new URLSearchParams({
-    username: document.getElementById("f_username").value.trim(),
-    isemri_numarasi: document.getElementById("f_isemri").value.trim(),
-    tarih: document.getElementById("f_tarih").value || ""
-  });
+const q=new URLSearchParams({
+username:f_username.value.trim(),
+isemri_numarasi:f_isemri.value.trim(),
+tarih:f_tarih.value||""
+});
 
-  try{
-    const res = await fetch("/api/tasks?" + q.toString());
-    if(!res.ok){
-      const e = await res.json().catch(()=>({error:"Sunucu hatası"}));
-      alert("Hata: " + (e.error || "Sunucu hatası"));
-      return;
-    }
-    const data = await res.json();
-    const tbody = document.getElementById("taskTable");
-    tbody.innerHTML = "";
-    if(!Array.isArray(data) || data.length === 0){
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted)">Kayıt bulunamadı</td></tr>';
-      return;
-    }
-    data.forEach(t=>{
-      const tr = document.createElement("tr");
-      const hatalar = [
-        t.hata_kodu1 ? `${t.hata_kodu1} (${t.hata_sayisi1||0})` : "",
-        t.hata_kodu2 ? `${t.hata_kodu2} (${t.hata_sayisi2||0})` : "",
-        t.hata_kodu3 ? `${t.hata_kodu3} (${t.hata_sayisi3||0})` : ""
-      ].filter(Boolean).join("<br>");
 
-      tr.innerHTML = `
-        <td>${t.username}</td>
-        <td>${t.isemri_numarasi || "-"}</td>
-        <td>${t.urun_kodu || "-"}</td>
-        <td>${t.tarih || (t.created_at ? new Date(t.created_at).toLocaleDateString() : "-")}</td>
-        <td>${t.yapilan_faaliyet || "-"}</td>
-        <td>${t.islem_adedi || "-"}</td>
-        <td>${hatalar || "-"}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }catch(err){
-    alert("İstek hatası: " + err.message);
-  }
+const res=await fetch("/api/tasks?"+q.toString());
+const data=await res.json();
+const tbody=taskTable;
+tbody.innerHTML="";
+
+
+if(!Array.isArray(data)||data.length===0){
+tbody.innerHTML="<tr><td colspan='7' style='text-align:center;padding:20px;color:#777'>Kayıt bulunamadı</td></tr>";
+return;
 }
 
-// otomatik yükle
+
+data.forEach(t=>{
+const hatalar=[
+t.hata_kodu1?`${t.hata_kodu1} (${t.hata_sayisi1||0})`:null,
+t.hata_kodu2?`${t.hata_kodu2} (${t.hata_sayisi2||0})`:null,
+t.hata_kodu3?`${t.hata_kodu3} (${t.hata_sayisi3||0})`:null,
+].filter(Boolean).join("<br>");
+
+
+const tr=document.createElement("tr");
+tr.innerHTML=`
+<td>${t.username}</td>
+<td>${t.isemri_numarasi||"-"}</td>
+<td>${t.urun_kodu||"-"}</td>
+<td>${t.tarih||"-"}</td>
+<td>${t.yapilan_faaliyet||"-"}</td>
+<td>${t.islem_adedi||"-"}</td>
+<td>${hatalar||"-"}</td>
+`;
+tbody.appendChild(tr);
+});
+}
+
+
 loadTasks();
 </script>
 </body>

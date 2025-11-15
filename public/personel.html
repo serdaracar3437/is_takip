@@ -1,218 +1,68 @@
 <!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Personel - Görev Girişi</title>
-<style>
-  :root{
-    --bg1:#2c003e; --accent:#ff6f00; --card:#fff; --muted:#6b6b6b;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:Inter, "Segoe UI", Arial, sans-serif;
-    background: linear-gradient(135deg, var(--bg1), #3a0050 60%, #ff6f00 100%);
-    min-height:100vh;
-    color:#111827;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-  }
+</div>
 
-  .card{
-    width:100%;
-    max-width:900px;
-    background:rgba(255,255,255,0.06);
-    border-radius:12px;
-    padding:20px;
-    box-shadow:0 8px 30px rgba(0,0,0,0.25);
-    color:white;
-  }
 
-  h1{margin:0 0 12px 0;font-size:22px}
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:12px;
-    margin-bottom:12px;
-  }
-  .full{grid-column:1/-1}
-  input, textarea, select{
-    width:100%;
-    padding:10px 12px;
-    border-radius:8px;
-    border:1px solid rgba(255,255,255,0.06);
-    background:rgba(255,255,255,0.03);
-    color:white;
-    outline:none;
-  }
-  textarea{min-height:90px; resize:vertical}
-  label{display:block;margin-bottom:6px;font-size:13px;color:rgba(255,255,255,0.85)}
-  .row{display:flex;gap:8px}
-  .btn{
-    background:var(--accent);
-    color:white;
-    border:none;
-    padding:10px 16px;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:600;
-  }
-  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.12);color:white}
-  .muted{color:rgba(255,255,255,0.75);font-size:13px}
-  .links{display:flex;gap:10px;margin-top:10px}
-  a.link{color:rgba(255,255,255,0.9);text-decoration:none;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,0.12)}
-  .note{font-size:13px;color:rgba(255,255,255,0.75);margin-top:8px}
+<div>
+<label for="hata_sayisi3">Hata Sayısı 3</label>
+<input id="hata_sayisi3" type="number" placeholder="0" />
+</div>
+</div>
 
-  @media (max-width:700px){
-    .grid{grid-template-columns:1fr}
-  }
-</style>
-</head>
-<body>
-  <main class="card" role="main" aria-labelledby="titulo">
-    <h1 id="titulo">Görev Girişi</h1>
 
-    <div class="grid">
-      <div class="full">
-        <label for="username">Personel (kullanıcı adı)</label>
-        <input id="username" placeholder="Kullanıcı adınız (örn: ahmet01)" />
-      </div>
+<div class="row" style="margin-top:10px;">
+<button class="btn" onclick="saveTask()">Kaydet</button>
+<a class="link" href="tasks.html">Görevleri Gör</a>
+<a class="link" href="logout.html">Çıkış Yap</a>
+</div>
 
-      <div>
-        <label for="isemri_numarasi">İş Emri Numarası</label>
-        <input id="isemri_numarasi" placeholder="Örn: WO-12345" />
-      </div>
 
-      <div>
-        <label for="urun_kodu">Ürün Kodu</label>
-        <input id="urun_kodu" placeholder="Ürün kodu" />
-      </div>
+<p class="note" id="note"></p>
+</main>
 
-      <div>
-        <label for="tarih">Tarih</label>
-        <input id="tarih" type="date" />
-      </div>
-
-      <div class="full">
-        <label for="yapilan_faaliyet">Yapılan Faaliyet</label>
-        <input id="yapilan_faaliyet" placeholder="Faaliyet adı / kısa açıklama" />
-      </div>
-
-      <div class="full">
-        <label for="aciklama">Açıklama</label>
-        <textarea id="aciklama" placeholder="Detaylı açıklama (isteğe bağlı)"></textarea>
-      </div>
-
-      <div>
-        <label for="kullanilan_malzeme">Kullanılan Malzeme</label>
-        <input id="kullanilan_malzeme" placeholder="Malzeme (isteğe bağlı)" />
-      </div>
-
-      <div>
-        <label for="islem_adedi">İşlem Adedi</label>
-        <input id="islem_adedi" type="number" placeholder="0" />
-      </div>
-
-      <div>
-        <label for="baslama_saati">Başlama Saati</label>
-        <input id="baslama_saati" type="time" />
-      </div>
-
-      <div>
-        <label for="bitis_saati">Bitiş Saati</label>
-        <input id="bitis_saati" type="time" />
-      </div>
-
-      <div>
-        <label for="hata_kodu1">Hata Kodu 1</label>
-        <input id="hata_kodu1" placeholder="Kod" />
-      </div>
-
-      <div>
-        <label for="hata_sayisi1">Hata Sayısı 1</label>
-        <input id="hata_sayisi1" type="number" placeholder="0" />
-      </div>
-
-      <div>
-        <label for="hata_kodu2">Hata Kodu 2</label>
-        <input id="hata_kodu2" placeholder="Kod" />
-      </div>
-
-      <div>
-        <label for="hata_sayisi2">Hata Sayısı 2</label>
-        <input id="hata_sayisi2" type="number" placeholder="0" />
-      </div>
-
-      <div>
-        <label for="hata_kodu3">Hata Kodu 3</label>
-        <input id="hata_kodu3" placeholder="Kod" />
-      </div>
-
-      <div>
-        <label for="hata_sayisi3">Hata Sayısı 3</label>
-        <input id="hata_sayisi3" type="number" placeholder="0" />
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:12px;">
-      <button class="btn" onclick="saveTask()">Kaydet</button>
-      <a class="link" href="tasks.html">Görevleri Gör</a>
-      <a class="link" href="logout.html">Çıkış</a>
-    </div>
-
-    <p class="note" id="note"></p>
-  </main>
 
 <script>
 async function saveTask(){
-  const note = document.getElementById("note");
-  note.textContent = "";
+const note = document.getElementById("note");
+note.textContent = "";
 
-  const payload = {
-    username: document.getElementById("username").value.trim(),
-    isemri_numarasi: document.getElementById("isemri_numarasi").value.trim() || null,
-    urun_kodu: document.getElementById("urun_kodu").value.trim() || null,
-    tarih: document.getElementById("tarih").value || null,
-    yapilan_faaliyet: document.getElementById("yapilan_faaliyet").value.trim() || null,
-    aciklama: document.getElementById("aciklama").value.trim() || null,
-    kullanilan_malzeme: document.getElementById("kullanilan_malzeme").value.trim() || null,
-    baslama_saati: document.getElementById("baslama_saati").value || null,
-    bitis_saati: document.getElementById("bitis_saati").value || null,
-    islem_adedi: document.getElementById("islem_adedi").value ? String(document.getElementById("islem_adedi").value) : null,
-    hata_kodu1: document.getElementById("hata_kodu1").value.trim() || null,
-    hata_sayisi1: document.getElementById("hata_sayisi1").value ? String(document.getElementById("hata_sayisi1").value) : null,
-    hata_kodu2: document.getElementById("hata_kodu2").value.trim() || null,
-    hata_sayisi2: document.getElementById("hata_sayisi2").value ? String(document.getElementById("hata_sayisi2").value) : null,
-    hata_kodu3: document.getElementById("hata_kodu3").value.trim() || null,
-    hata_sayisi3: document.getElementById("hata_sayisi3").value ? String(document.getElementById("hata_sayisi3").value) : null
-  };
 
-  if(!payload.username){
-    note.textContent = "Kullanıcı adı boş olamaz.";
-    return;
-  }
+const payload = {
+username: username.value.trim(),
+isemri_numarasi: isemri_numarasi.value.trim() || null,
+urun_kodu: urun_kodu.value.trim() || null,
+tarih: tarih.value || null,
+yapilan_faaliyet: yapilan_faaliyet.value.trim() || null,
+aciklama: aciklama.value.trim() || null,
+kullanilan_malzeme: kullanilan_malzeme.value.trim() || null,
+baslama_saati: baslama_saati.value || null,
+bitis_saati: bitis_saati.value || null,
+islem_adedi: islem_adedi.value ? String(islem_adedi.value) : null,
+hata_kodu1: hata_kodu1.value.trim() || null,
+hata_sayisi1: hata_sayisi1.value ? String(hata_sayisi1.value) : null,
+hata_kodu2: hata_kodu2.value.trim() || null,
+hata_sayisi2: hata_sayisi2.value ? String(hata_sayisi2.value) : null,
+hata_kodu3: hata_kodu3.value.trim() || null,
+hata_sayisi3: hata_sayisi3.value ? String(hata_sayisi3.value) : null
+};
 
-  try{
-    const res = await fetch("/api/tasks", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
 
-    const json = await res.json();
-    if(!res.ok){
-      note.textContent = "Hata: " + (json.error || "Sunucu hatası");
-    } else {
-      note.textContent = "Görev kaydedildi.";
-      // temizle form (isteğe bağlı)
-      // document.querySelectorAll('input,textarea').forEach(i=>i.value='');
-    }
-  } catch(err){
-    note.textContent = "İstek gönderilemedi: " + err.message;
-  }
+if(!payload.username){note.textContent="Kullanıcı adı boş olamaz.";return;}
+
+
+try{
+const res = await fetch("/api/tasks",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(payload)
+});
+const json = await res.json();
+
+
+if(!res.ok){note.textContent="Hata: "+(json.error||"Sunucu hatası");return;}
+
+
+note.textContent="Görev kaydedildi.";
+}catch(err){note.textContent="İstek hatası: "+err.message;}
 }
 </script>
 </body>
