@@ -131,12 +131,17 @@ app.get("/api/tasks", (req, res) => {
 
 // 🔹 Logout
 app.get("/logout", (req, res) => {
-  res.sendFile(path.join(__dirname, "logout.html"));
+  res.sendFile(path.join(__dirname, "public/logout.html"));
 });
 
 // 🔹 Ana sayfa
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+  res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// 🔹 Diğer tüm istekler
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/index.html"));
 });
 
 app.listen(PORT, () =>
