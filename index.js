@@ -1,138 +1,108 @@
 import express from "express";
-import fs from "fs";
-import path from "path";
 import cors from "cors";
-import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json()); // << body-parser yerine bu
+app.use(express.json());
 
-app.use(express.static(path.join(__dirname, "public")));
+// =======================
+// Supabase Client
+// =======================
 
-// =============================================
-// DATA KLASÖRÜ ve data.json garanti oluşturulsun
-// =============================================
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
-const DATA_DIR = path.join(__dirname, "data");
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-const dataPath = path.join(DATA_DIR, "data.json");
-
-if (!fs.existsSync(dataPath)) {
-  fs.writeFileSync(
-    dataPath,
-    JSON.stringify(
-      {
-        users: [
-          { username: "admin", password: "1234", role: "admin" },
-          { username: "personel1", password: "1234", role: "personel" }
-        ],
-        tasks: []
-      },
-      null,
-      2
-    ),
-    "utf8"
-  );
-}
-
-// JSON OKU / YAZ
-function readData() {
-  return JSON.parse(fs.readFileSync(dataPath, "utf8"));
-}
-
-function writeData(data) {
-  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2), "utf8");
-}
-
-// ==================== API ====================
-
+// =======================
 // LOGIN
-app.post("/api/login", (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const data = readData();
+// =======================
 
-    const user = data.users.find(
-      (u) => u.username === username && u.password === password
-    );
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
 
-    if (!user) {
-      return res.status(401).json({ error: "Geçersiz kullanıcı adı veya şifre" });
-    }
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("username", username)
+    .eq("password", password)
+    .maybeSingle();
 
-    res.json({ role: user.role, username: user.username });
-  } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ error: "Sunucu hatası" });
-  }
+  if (error) return res.status(500).json({ error: error.message });
+  if (!user) return res.status(401).json({ error: "Geçersiz kullanıcı" });
+
+  res.json({ role: user.role, username: user.username });
 });
 
-// Kullanıcı ekleme
-app.post("/api/addUser", (req, res) => {
-  try {
-    const { username, password, role } = req.body;
-    const data = readData();
+// =======================
+// YENİ PERSONEL EKLEME
+// =======================
 
-    if (data.users.find((u) => u.username === username)) {
-      return res.status(400).json({ error: "Kullanıcı zaten var!" });
-    }
+app.post("/api/addUser", async (req, res) => {
+  const { username, password, role } = req.body;
 
-    data.users.push({ username, password, role });
-    writeData(data);
+  const { error } = await supabase
+    .from("users")
+    .insert([{ username, password, role }]);
 
-    res.json({ message: "Kullanıcı eklendi!" });
-  } catch (err) {
-    console.error("ADD USER ERROR:", err);
-    res.status(500).json({ error: "Sunucu hatası" });
-  }
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: "Kullanıcı eklendi" });
 });
 
-// Personel listeleme
-app.get("/api/personel", (req, res) => {
-  const data = readData();
-  res.json(data.users.filter((u) => u.role === "personel"));
+// =======================
+// PERSONEL LİSTELEME
+// =======================
+
+app.get("/api/personel", async (req, res) => {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("role", "personel");
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json(data);
 });
 
-// Görev ekleme
-app.post("/api/tasks", (req, res) => {
-  const { username, task } = req.body;
+// =======================
+// GÖREV KAYDETME
+// =======================
 
-  const data = readData();
-  data.tasks.push({
-    id: Date.now(),
-    username,
-    task,
-    date: new Date().toISOString(),
-  });
+app.post("/api/tasks", async (req, res) => {
+  const task = req.body;
 
-  writeData(data);
-  res.json({ message: "Görev kaydedildi!" });
+  const { error } = await supabase.from("tasks").insert([task]);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json({ success: true });
 });
 
-// Görev listeleme
-app.get("/api/tasks", (req, res) => {
-  const data = readData();
-  res.json(data.tasks);
+// =======================
+// GÖREV LİSTELEME
+// =======================
+
+app.get("/api/tasks", async (req, res) => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.json(data);
 });
 
-// HTML dosyaları
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/index.html"));
-});
+// =======================
+// HTML
+// =======================
 
-app.get("/logout", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/logout.html"));
-});
+app.use(express.static("public"));
 
 app.listen(PORT, () =>
-  console.log(`🌐 Sunucu ${PORT} portunda çalışıyor...`)
+  console.log(`SERVER READY → PORT ${PORT}`)
 );
