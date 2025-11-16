@@ -1,81 +1,270 @@
+<!-- public/edit-task.html -->
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Görev Düzenle</title>
+<meta charset="UTF-8">
+<title>Görev Düzenle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  body { 
+    margin:0; 
+    font-family:Inter,Arial; 
+    background:#f4f6fc;
+    color:#111;
+  }
+  .header { 
+    background:#2c003e; 
+    color:#fff; 
+    padding:20px; 
+    text-align:center; 
+    font-weight:700; 
+    font-size:20px 
+  }
+  .wrap {
+    max-width:900px;
+    background:white;
+    margin:30px auto;
+    padding:25px;
+    border-radius:12px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.1);
+  }
+
+  h2 { text-align:center; margin-top:0; }
+
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+
+  .grid-1 {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+    margin-top:15px;
+  }
+
+  label { font-weight:600; }
+
+  input, textarea {
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+  }
+
+  textarea { height:70px; resize:none; }
+
+  .btn {
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+  }
+
+  .save-btn { background:#ff6f00; color:white; }
+  .delete-btn { background:#b30000; color:white; }
+  .back-btn { background:#777; color:white; }
+
+  .row-btns {
+    display:flex;
+    justify-content:space-between;
+    margin-top:25px;
+  }
+</style>
 </head>
 <body>
 
-<h2>Görev Düzenleme</h2>
+<div class="header">Görevi Düzenle</div>
 
-<form id="editForm">
-    <label>İş Emri No:</label><br>
-    <input id="isemri" type="text"><br><br>
+<div class="wrap">
 
-    <label>Ürün Kodu:</label><br>
-    <input id="urun" type="text"><br><br>
+  <h2>Görev Bilgileri</h2>
 
-    <label>Tarih:</label><br>
-    <input id="tarih" type="date"><br><br>
+  <div class="grid">
 
-    <label>Yapılan Faaliyet:</label><br>
-    <input id="faaliyet" type="text"><br><br>
+    <div>
+      <label>Personel</label>
+      <input id="username">
+    </div>
 
-    <label>Açıklama:</label><br>
-    <input id="aciklama" type="text"><br><br>
+    <div>
+      <label>İş Emri</label>
+      <input id="isemri_numarasi">
+    </div>
 
-    <button type="button" onclick="updateTask()">Kaydet</button>
-</form>
+    <div>
+      <label>Ürün Kodu</label>
+      <input id="urun_kodu">
+    </div>
+
+    <div>
+      <label>Tarih</label>
+      <input id="tarih" type="date">
+    </div>
+
+    <div>
+      <label>Başlama Saati</label>
+      <input id="baslama_saati" type="time">
+    </div>
+
+    <div>
+      <label>Bitiş Saati</label>
+      <input id="bitis_saati" type="time">
+    </div>
+
+    <div>
+      <label>İşlem Adedi</label>
+      <input id="islem_adedi">
+    </div>
+
+  </div>
+
+  <div class="grid-1">
+    <div>
+      <label>Yapılan Faaliyet</label>
+      <textarea id="yapilan_faaliyet"></textarea>
+    </div>
+
+    <div>
+      <label>Açıklama</label>
+      <textarea id="aciklama"></textarea>
+    </div>
+
+    <div>
+      <label>Kullanılan Malzeme</label>
+      <textarea id="kullanilan_malzeme"></textarea>
+    </div>
+  </div>
+
+  <h3 style="margin-top:25px;">Hata Bilgileri</h3>
+  <div class="grid">
+
+    <div>
+      <label>Hata Kodu 1</label>
+      <input id="hata_kodu1">
+    </div>
+    <div>
+      <label>Hata Sayısı 1</label>
+      <input id="hata_sayisi1">
+    </div>
+
+    <div>
+      <label>Hata Kodu 2</label>
+      <input id="hata_kodu2">
+    </div>
+    <div>
+      <label>Hata Sayısı 2</label>
+      <input id="hata_sayisi2">
+    </div>
+
+    <div>
+      <label>Hata Kodu 3</label>
+      <input id="hata_kodu3">
+    </div>
+    <div>
+      <label>Hata Sayısı 3</label>
+      <input id="hata_sayisi3">
+    </div>
+
+  </div>
+
+  <div class="row-btns">
+    <button class="back-btn btn" onclick="history.back()">⬅ Geri</button>
+    <button class="delete-btn btn" onclick="deleteTask()">🗑 Sil</button>
+    <button class="save-btn btn" onclick="saveTask()">💾 Kaydet</button>
+  </div>
+
+</div>
 
 <script>
-const supabaseUrl = "SUPABASE_URL";
-const supabaseKey = "SUPABASE_ANON_KEY";
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const params = new URLSearchParams(window.location.search);
+const taskId = params.get("id");
 
-const urlParams = new URLSearchParams(window.location.search);
-const taskId = urlParams.get("id");
-
-document.addEventListener("DOMContentLoaded", loadTask);
-
-async function loadTask() {
-    const { data, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .eq("id", taskId)
-        .single();
-
-    if (error) {
-        alert("Görev bulunamadı!");
-        return;
-    }
-
-    document.getElementById("isemri").value = data.isemri_numarasi || "";
-    document.getElementById("urun").value = data.urun_kodu || "";
-    document.getElementById("tarih").value = data.tarih || "";
-    document.getElementById("faaliyet").value = data.yapilan_faaliyet || "";
-    document.getElementById("aciklama").value = data.aciklama || "";
+if (!taskId) {
+  alert("Geçersiz görev ID");
+  location.href = "tasks.html";
 }
 
-async function updateTask() {
-    const { error } = await supabase
-        .from("tasks")
-        .update({
-            isemri_numarasi: document.getElementById("isemri").value,
-            urun_kodu: document.getElementById("urun").value,
-            tarih: document.getElementById("tarih").value,
-            yapilan_faaliyet: document.getElementById("faaliyet").value,
-            aciklama: document.getElementById("aciklama").value,
-        })
-        .eq("id", taskId);
+// Sadece admin kontrolü
+if (localStorage.getItem("role") !== "admin") {
+  alert("Bu sayfaya erişim yetkiniz yok");
+  location.href = "tasks.html";
+}
 
-    if (error) {
-        alert("Güncelleme hatası!");
-        console.error(error);
-        return;
+
+// ------------------------
+// GÖREVİ YÜKLE
+// ------------------------
+async function loadTask() {
+  const res = await fetch("/api/tasks?id=" + taskId);
+  let data = await res.json();
+
+  // Tek kayıt dönmeli
+  if (Array.isArray(data)) data = data[0];
+
+  if (!data) {
+    alert("Kayıt bulunamadı");
+    location.href = "tasks.html";
+    return;
+  }
+
+  // Inputlara doldur
+  for (const key in data) {
+    if (document.getElementById(key)) {
+      document.getElementById(key).value = data[key] || "";
     }
+  }
+}
 
-    alert("Görev başarıyla güncellendi!");
-    window.location.href = "task.html";
+loadTask();
+
+
+// ------------------------
+// GÖREVİ KAYDET
+// ------------------------
+async function saveTask() {
+  const payload = {};
+
+  document.querySelectorAll("input, textarea").forEach(el => {
+    payload[el.id] = el.value.trim();
+  });
+
+  const res = await fetch("/api/updateTask/" + taskId, {
+    method:"PUT",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+
+  const j = await res.json();
+
+  if (!res.ok) {
+    alert("Hata: " + j.error);
+    return;
+  }
+
+  alert("Görev güncellendi!");
+  location.href = "tasks.html";
+}
+
+
+
+// ------------------------
+// GÖREVİ SİL
+// ------------------------
+async function deleteTask() {
+  if (!confirm("Bu kayıt silinsin mi?")) return;
+
+  const res = await fetch("/api/deleteTask/" + taskId, { method:"DELETE" });
+
+  if (res.ok) {
+    alert("Görev silindi!");
+    location.href = "tasks.html";
+  } else {
+    alert("Silme hatası");
+  }
 }
 </script>
 
