@@ -28,7 +28,11 @@ async function login(){
   const pass = document.getElementById("password").value.trim();
   const msg = document.getElementById("msg");
   msg.textContent = "";
-  if(!user||!pass){ msg.textContent = "Kullanıcı adı ve şifre gerekli"; return; }
+
+  if(!user || !pass){
+    msg.textContent = "Kullanıcı adı ve şifre gerekli";
+    return;
+  }
 
   try{
     const r = await fetch("/api/login", {
@@ -36,12 +40,28 @@ async function login(){
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ username: user, password: pass })
     });
+
     const j = await r.json();
-    if(!r.ok){ msg.textContent = j.error || "Giriş başarısız"; return; }
-    // Save username in sessionStorage for personel page auto-fill
-    sessionStorage.setItem("username", j.username);
-    if(j.role === "admin") location.href = "admin.html"; else location.href = "personel.html";
-  }catch(e){ msg.textContent = "Sunucu hatası: " + e.message; }
+
+    if(!r.ok){
+      msg.textContent = j.error || "Giriş başarısız";
+      return;
+    }
+
+    // 🔥 BURASI KRİTİK — tüm sayfalarda erişilmesi için:
+    localStorage.setItem("username", j.username);
+    localStorage.setItem("role", j.role);
+
+    // 🔥 Yönlendirme
+    if(j.role === "admin"){
+      location.href = "admin.html";
+    } else {
+      location.href = "personel.html";
+    }
+
+  }catch(e){
+    msg.textContent = "Sunucu hatası: " + e.message;
+  }
 }
 </script>
 </body>
