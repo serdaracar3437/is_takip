@@ -1,85 +1,207 @@
-<!-- public/tasks.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Görev Listesi</title>
-<style>
-  body{margin:0;font-family:Inter,Arial;background:#f4f6fc;color:#111}
-  .header{background:#2c003e;color:#fff;padding:20px;text-align:center;font-weight:700}
-  .wrap{max-width:1200px;margin:18px auto;padding:12px}
-  .panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  input{padding:10px;border-radius:8px;border:1px solid #ddd}
-  .btn{background:#ff6f00;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
-  table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden}
-  th{background:#ff6f00;color:white;padding:12px;text-align:left}
-  td{padding:12px;border-top:1px solid #f1f1f1}
-  tr:hover td{background:#fff7ed}
-</style>
+  <meta charset="UTF-8" />
+  <title>Görev Girişi</title>
+
+  <style>
+    body {
+      background: #f4f4f4;
+      font-family: Arial;
+      padding: 20px;
+      color: #333;
+    }
+    h2 {
+      color: #ff6f00;
+      margin-bottom: 10px;
+    }
+    input, textarea, select {
+      width: 300px;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+    }
+    button {
+      background-color: #ff6f00;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #e65c00;
+    }
+
+    /* --- TABLO TASARIMI --- */
+    table {
+      width: 100%;
+      margin-top: 40px;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    table th {
+      background: #ff6f00;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      position: sticky;
+      top: 0;
+    }
+    table td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    tr:hover {
+      background: #fff5e6;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div class="header">Görev Listesi</div>
-  <div class="wrap">
-    <div class="panel">
-      <input id="f_username" placeholder="Personel">
-      <input id="f_isemri" placeholder="İş Emri No">
-      <input id="f_tarih" type="date">
-      <button class="btn" onclick="loadTasks()">Filtrele</button>
-      <button class="btn" onclick="exportCSV()">CSV İndir</button>
-      <button class="btn" onclick="window.print()">PDF (Yazdır)</button>
-      <a class="btn" href="personel.html" style="text-decoration:none">Yeni Görev</a>
-    </div>
 
-    <div id="tableWrap">
-      <table>
-        <thead>
-          <tr><th>Personel</th><th>İş Emri</th><th>Ürün</th><th>Tarih</th><th>Faaliyet</th><th>Adet</th><th>Hata</th></tr>
-        </thead>
-        <tbody id="taskTable"></tbody>
-      </table>
-    </div>
-  </div>
+  <h2>Görev Girişi</h2>
+
+  <input id="username" placeholder="Ad Soyad"><br>
+  <input id="isemri_numarasi" placeholder="İş Emri Numarası"><br>
+  <input id="urun_kodu" placeholder="Ürün Kodu"><br>
+  <input type="date" id="tarih"><br>
+  <input id="yapilan_faaliyet" placeholder="Yapılan Faaliyet"><br>
+  <textarea id="aciklama" placeholder="Açıklama"></textarea><br>
+  <input id="kullanilan_malzeme" placeholder="Kullanılan Malzeme"><br>
+  <label>Başlama: </label><input type="time" id="baslama_saati"><br>
+  <label>Bitiş: </label><input type="time" id="bitis_saati"><br>
+  <input id="islem_adedi" placeholder="İşlem Adedi"><br>
+
+  <h3>Hatalar</h3>
+  <input id="hata_kodu1" placeholder="Hata Kodu 1">
+  <input id="hata_sayisi1" placeholder="Hata Sayısı 1"><br>
+
+  <input id="hata_kodu2" placeholder="Hata Kodu 2">
+  <input id="hata_sayisi2" placeholder="Hata Sayısı 2"><br>
+
+  <input id="hata_kodu3" placeholder="Hata Kodu 3">
+  <input id="hata_sayisi3" placeholder="Hata Sayısı 3"><br>
+
+  <button onclick="saveTask()">Kaydet</button>
+
+  <hr><br>
+
+  <h2>Kayıtlı Görevler</h2>
+
+  <!-- TABLO ALANI -->
+  <table id="taskTable">
+    <thead>
+      <tr>
+        <th>Personel</th>
+        <th>İş Emri</th>
+        <th>Ürün Kodu</th>
+        <th>Tarih</th>
+        <th>Faaliyet</th>
+        <th>Açıklama</th>
+        <th>Malzeme</th>
+        <th>Başlama</th>
+        <th>Bitiş</th>
+        <th>Adet</th>
+        <th>Hata 1</th>
+        <th>Sayı 1</th>
+        <th>Hata 2</th>
+        <th>Sayı 2</th>
+        <th>Hata 3</th>
+        <th>Sayı 3</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
 <script>
-// fetch & render
-async function loadTasks(){
-  const q = new URLSearchParams({
-    username: document.getElementById("f_username").value.trim(),
-    isemri_numarasi: document.getElementById("f_isemri").value.trim(),
-    tarih: document.getElementById("f_tarih").value || ""
-  });
-  try{
-    const res = await fetch("/api/tasks?" + q.toString());
-    if(!res.ok){ const e = await res.json().catch(()=>({error:"Sunucu"})); alert(e.error); return; }
-    const data = await res.json();
-    const tbody = document.getElementById("taskTable");
-    tbody.innerHTML = "";
-    if(!Array.isArray(data) || data.length === 0){ tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;padding:18px;color:#777'>Kayıt yok</td></tr>"; return; }
-    data.forEach(t=>{
-      const hatalar = [t.hata_kodu1?`${t.hata_kodu1} (${t.hata_sayisi1||0})`:"", t.hata_kodu2?`${t.hata_kodu2} (${t.hata_sayisi2||0})`:"", t.hata_kodu3?`${t.hata_kodu3} (${t.hata_sayisi3||0})`:""].filter(Boolean).join("<br>");
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${t.username}</td><td>${t.isemri_numarasi||"-"}</td><td>${t.urun_kodu||"-"}</td><td>${t.tarih||"-"}</td><td>${t.yapilan_faaliyet||"-"}</td><td>${t.islem_adedi||"-"}</td><td>${hatalar||"-"}</td>`;
-      tbody.appendChild(tr);
-    });
-  }catch(e){ alert("Hata: " + e.message); }
+
+const supabase = supabase.createClient(
+  "YOUR_SUPABASE_URL",
+  "YOUR_SUPABASE_ANON_KEY"
+);
+
+
+// -------------------- GÖREV KAYDET --------------------
+async function saveTask() {
+
+  const task = {
+    username: username.value,
+    isemri_numarasi: isemri_numarasi.value,
+    urun_kodu: urun_kodu.value,
+    tarih: tarih.value,
+    yapilan_faaliyet: yapilan_faaliyet.value,
+    aciklama: aciklama.value,
+    kullanilan_malzeme: kullanilan_malzeme.value,
+    baslama_saati: baslama_saati.value,
+    bitis_saati: bitis_saati.value,
+    islem_adedi: islem_adedi.value,
+    hata_kodu1: hata_kodu1.value,
+    hata_sayisi1: hata_sayisi1.value,
+    hata_kodu2: hata_kodu2.value,
+    hata_sayisi2: hata_sayisi2.value,
+    hata_kodu3: hata_kodu3.value,
+    hata_sayisi3: hata_sayisi3.value,
+  };
+
+  const { error } = await supabase.from("tasks").insert(task);
+
+  if (error) {
+    alert("Kayıt hatası: " + error.message);
+    return;
+  }
+
+  alert("Görev başarıyla kaydedildi!");
+  loadTasks();
 }
+
+
+
+// -------------------- TABLOYU YÜKLE --------------------
+async function loadTasks() {
+  const { data, error } = await supabase.from("tasks").select("*");
+
+  if (error) {
+    alert("Veri çekme hatası: " + error.message);
+    return;
+  }
+
+  const tbody = document.querySelector("#taskTable tbody");
+  tbody.innerHTML = "";
+
+  data.forEach(t => {
+    const row = `
+      <tr>
+        <td>${t.username}</td>
+        <td>${t.isemri_numarasi}</td>
+        <td>${t.urun_kodu}</td>
+        <td>${t.tarih}</td>
+        <td>${t.yapilan_faaliyet}</td>
+        <td>${t.aciklama}</td>
+        <td>${t.kullanilan_malzeme}</td>
+        <td>${t.baslama_saati}</td>
+        <td>${t.bitis_saati}</td>
+        <td>${t.islem_adedi}</td>
+        <td>${t.hata_kodu1}</td>
+        <td>${t.hata_sayisi1}</td>
+        <td>${t.hata_kodu2}</td>
+        <td>${t.hata_sayisi2}</td>
+        <td>${t.hata_kodu3}</td>
+        <td>${t.hata_sayisi3}</td>
+      </tr>
+    `;
+    tbody.innerHTML += row;
+  });
+}
+
 loadTasks();
 
-// CSV export
-async function exportCSV(){
-  const tbody = document.getElementById("taskTable");
-  if(tbody.children.length === 0){ alert("İlk önce kayıtları yükleyin"); return; }
-  const rows = [["username","isemri_numarasi","urun_kodu","tarih","yapilan_faaliyet","islem_adedi","hata_kodlari"]];
-  for(const tr of tbody.children){
-    const cells = Array.from(tr.children).map(td => td.innerText.replace(/\n/g," ").replace(/\t/g," "));
-    rows.push(cells);
-  }
-  const csv = rows.map(r => r.map(c => `"${(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = "tasks_export.csv"; a.click(); URL.revokeObjectURL(url);
-}
 </script>
+
 </body>
 </html>
