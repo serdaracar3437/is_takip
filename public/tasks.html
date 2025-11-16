@@ -63,8 +63,8 @@
 </div>
 
 <script>
-// Admin kontrolü
-const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "true";
+// --------------------- ADMIN KONTROLÜ ---------------------
+const IS_ADMIN = localStorage.getItem("role") === "admin";
 
 // --------------------- LOAD TASKS ---------------------
 async function loadTasks() {
@@ -74,80 +74,48 @@ async function loadTasks() {
     tarih: f_tarih.value || ""
   });
 
-  try {
-    const res = await fetch("/api/tasks?" + q);
+  const res = await fetch("/api/tasks?" + q);
+  const data = await res.json();
 
-    if (!res.ok) {
-      const e = await res.json().catch(()=>({error:"Sunucu hatası"}));
-      alert(e.error);
-      return;
-    }
+  const tbody = document.getElementById("taskTable");
+  tbody.innerHTML = "";
 
-    const data = await res.json();
-    const tbody = document.getElementById("taskTable");
-    tbody.innerHTML = "";
-
-    if (!Array.isArray(data) || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:18px;color:#777">Kayıt yok</td></tr>`;
-      return;
-    }
-
-    data.forEach(t => {
-      const tr = document.createElement("tr");
-
-      tr.innerHTML = `
-        <td>${t.username}</td>
-        <td>${t.isemri_numarasi || "-"}</td>
-        <td>${t.urun_kodu || "-"}</td>
-        <td>${t.tarih || "-"}</td>
-        <td>${t.yapilan_faaliyet || "-"}</td>
-        <td>${t.aciklama || "-"}</td>
-        <td>${t.kullanilan_malzeme || "-"}</td>
-        <td>${t.baslama_saati || "-"}</td>
-        <td>${t.bitis_saati || "-"}</td>
-        <td>${t.islem_adedi || "-"}</td>
-
-        <td>${t.hata_kodu1 ? `${t.hata_kodu1} (${t.hata_sayisi1})` : "-"}</td>
-        <td>${t.hata_kodu2 ? `${t.hata_kodu2} (${t.hata_sayisi2})` : "-"}</td>
-        <td>${t.hata_kodu3 ? `${t.hata_kodu3} (${t.hata_sayisi3})` : "-"}</td>
-
-        <td>${
-          IS_ADMIN
-            ? `<button class="edit-btn" onclick="editTask(${t.id})">Düzenle</button>`
-            : ""
-        }</td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-
-  } catch (e) {
-    alert("Hata: " + e.message);
+  if (!Array.isArray(data) || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:18px;color:#777">Kayıt yok</td></tr>`;
+    return;
   }
+
+  data.forEach(t => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${t.username}</td>
+      <td>${t.isemri_numarasi || "-"}</td>
+      <td>${t.urun_kodu || "-"}</td>
+      <td>${t.tarih || "-"}</td>
+      <td>${t.yapilan_faaliyet || "-"}</td>
+      <td>${t.aciklama || "-"}</td>
+      <td>${t.kullanilan_malzeme || "-"}</td>
+      <td>${t.baslama_saati || "-"}</td>
+      <td>${t.bitis_saati || "-"}</td>
+      <td>${t.islem_adedi || "-"}</td>
+
+      <td>${t.hata_kodu1 ? `${t.hata_kodu1} (${t.hata_sayisi1})` : "-"}</td>
+      <td>${t.hata_kodu2 ? `${t.hata_kodu2} (${t.hata_sayisi2})` : "-"}</td>
+      <td>${t.hata_kodu3 ? `${t.hata_kodu3} (${t.hata_sayisi3})` : "-"}</td>
+
+      <td>${
+        IS_ADMIN
+          ? `<button class="edit-btn" onclick="editTask(${t.id})">Düzenle</button>`
+          : ""
+      }</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
 }
 
 loadTasks();
-
-// --------------------- CSV EXPORT ---------------------
-function exportCSV() {
-  const trs = [...document.querySelectorAll("#taskTable tr")];
-  if (trs.length === 0) { alert("Tablo boş"); return; }
-
-  const headers = [...document.querySelectorAll("thead th")].map(t => t.innerText);
-  const rows = [headers];
-
-  trs.forEach(tr => {
-    rows.push([...tr.children].map(td => td.innerText.replace(/\n/g," ")));
-  });
-
-  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-  const blob = new Blob([csv], { type:"text/csv" });
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "tasks.csv";
-  a.click();
-}
 
 // --------------------- EDIT ---------------------
 function editTask(id) {
