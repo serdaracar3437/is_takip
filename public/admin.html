@@ -1,87 +1,265 @@
 <!DOCTYPE html>
-.row{display:flex;gap:10px;flex-wrap:wrap;}
-.btn{background:#ff6f00;color:white;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;}
-ul{list-style:none;padding:0;margin-top:10px;}
-li{padding:10px;border-radius:8px;background:#f8f9ff;margin-bottom:8px;border:1px solid #eceef5;}
-.tag{display:inline-block;padding:4px 8px;border-radius:6px;font-size:12px;background:#2c003e;color:white;margin-left:6px;}
-</style>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Yönetici Paneli</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial;
+      background: linear-gradient(135deg, #2c003e, #ff6f00);
+      color: white;
+      padding: 30px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.12);
+      padding: 15px;
+      border-radius: 8px;
+      max-width: 380px;
+      margin-bottom: 25px;
+    }
+
+    input, select {
+      margin: 6px 0;
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+    }
+
+    button {
+      background-color: #ff6f00;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+
+    button:hover { background-color: #e65c00; }
+
+    ul { padding-left: 15px; }
+    li { margin: 5px 0; }
+
+    /* ----- MODAL TASARIMI ----- */
+
+    .modal-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      background: white;
+      width: 350px;
+      padding: 20px;
+      border-radius: 8px;
+      color: black;
+    }
+
+    .modal h3 { margin-top: 0; }
+
+    .close-btn {
+      background: #900;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
-<div class="header">Yönetici Paneli</div>
-<div class="wrap">
 
+<h2>Yönetici Paneli</h2>
 
-<section class="card">
-<h2>Kullanıcı Ekle</h2>
-<div class="row">
-<input id="newUser" placeholder="kullanıcı adı" />
-<input id="newPass" type="password" placeholder="şifre" />
-<select id="newRole"><option value="personel">Personel</option><option value="admin">Admin</option></select>
-<button class="btn" onclick="addUser()">Ekle</button>
-</div>
-</section>
+<!-- ========================== -->
+<!--  YENİ KULLANICI EKLEME     -->
+<!-- ========================== -->
 
+<div class="card">
+  <h3>Kullanıcı Ekle</h3>
 
-<section class="card">
-<h2>Personel Listesi</h2>
-<button class="btn" onclick="loadPersonel()">Yenile</button>
-<ul id="personelList"></ul>
-</section>
+  <label>Kullanıcı Adı</label>
+  <input type="text" id="newUser" placeholder="Örn: ahmet123">
 
+  <label>Şifre</label>
+  <div style="display:flex; align-items:center;">
+    <input type="password" id="newPass" style="flex:1;">
+    <button onclick="togglePassword()" style="margin-left:5px;">👁</button>
+  </div>
 
-<section class="card">
-<h2>Son Görevler</h2>
-<button class="btn" onclick="loadTasks()">Listele</button>
-<ul id="taskList"></ul>
-</section>
+  <label>Rol</label>
+  <select id="newRole">
+    <option value="personel">Personel</option>
+    <option value="admin">Admin</option>
+  </select>
 
-
-<a href="logout.html">Çıkış Yap</a>
+  <button onclick="addUser()" style="margin-top:10px; width:100%;">➕ Kullanıcı Ekle</button>
 </div>
 
+<!-- ========================== -->
+<!-- PERSONEL LİSTESİ           -->
+<!-- ========================== -->
+
+<h3>Kullanıcılar</h3>
+<button onclick="loadUsers()">Listeyi Yenile</button>
+<ul id="userList"></ul>
+
+<h3>Görevler</h3>
+<button onclick="window.location='tasks.html'">Görev Listesi</button>
+
+<br><br>
+<a href="logout.html" style="color:white;">Çıkış Yap</a>
+
+<!-- ========================== -->
+<!-- MODAL: KULLANICI DÜZENLE  -->
+<!-- ========================== -->
+
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3>Kullanıcı Düzenle</h3>
+
+    <input type="hidden" id="edit_id">
+
+    <label>Kullanıcı Adı</label>
+    <input type="text" id="edit_username">
+
+    <label>Yeni Şifre</label>
+    <input type="text" id="edit_password" placeholder="Değiştirmek istemezsen boş bırak">
+
+    <label>Rol</label>
+    <select id="edit_role">
+      <option value="admin">Admin</option>
+      <option value="personel">Personel</option>
+    </select>
+
+    <button onclick="updateUser()">Kaydet</button>
+    <button class="close-btn" onclick="closeModal()">Kapat</button>
+  </div>
+</div>
 
 <script>
-async function addUser(){
-const username=newUser.value.trim();
-const password=newPass.value.trim();
-const role=newRole.value;
-if(!username||!password){alert("Bilgiler boş olamaz");return;}
 
-
-const res=await fetch("/api/addUser",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({username,password,role})
-});
-const json=await res.json();
-if(!res.ok){alert(json.error||"Hata");return;}
-alert("Kullanıcı eklendi");
-newUser.value="";newPass.value="";
+function togglePassword() {
+  const pass = document.getElementById("newPass");
+  pass.type = pass.type === "password" ? "text" : "password";
 }
 
+/* ============================
+      KULLANICI EKLE
+============================ */
 
-async function loadPersonel(){
-const res=await fetch("/api/personel");
-const data=await res.json();
-personelList.innerHTML="";
-data.forEach(u=>{
-const li=document.createElement("li");
-li.innerHTML=`${u.username} <span class='tag'>${u.role}</span>`;
-personelList.appendChild(li);
-});
+async function addUser() {
+  const username = newUser.value.trim();
+  const password = newPass.value.trim();
+  const role = newRole.value;
+
+  if (!username || !password) {
+    return alert("❗ Kullanıcı adı ve şifre boş olamaz.");
+  }
+
+  const res = await fetch("/api/addUser", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, role }),
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    alert("Kullanıcı eklendi!");
+    loadUsers();
+  } else {
+    alert("Hata: " + data.error);
+  }
 }
 
+/* ============================
+       KULLANICILARI LİSTELE
+============================ */
 
-async function loadTasks(){
-const res=await fetch("/api/tasks");
-const data=await res.json();
-taskList.innerHTML="";
-data.slice(0,50).forEach(t=>{
-const li=document.createElement("li");
-li.innerHTML=`<strong>${t.username}</strong> — ${t.isemri_numarasi||"-"} — ${t.tarih||"-"}`;
-taskList.appendChild(li);
-});
+async function loadUsers() {
+  const res = await fetch("/api/personel");
+  const data = await res.json();
+
+  const list = document.getElementById("userList");
+  list.innerHTML = "";
+
+  data.forEach(user => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <b>${user.username}</b> (${user.role})
+      <button onclick="openEdit(${user.id}, '${user.username}', '${user.role}')">Düzenle</button>
+      <button onclick="deleteUser(${user.id})" style="background:#900;">Sil</button>
+    `;
+    list.appendChild(li);
+  });
 }
+
+/* ============================
+        KULLANICI SİLME
+============================ */
+
+async function deleteUser(id) {
+  if (!confirm("Bu kullanıcı silinsin mi?")) return;
+
+  const res = await fetch("/api/deleteUser/" + id, { method: "DELETE" });
+
+  if (res.ok) {
+    alert("Kullanıcı silindi");
+    loadUsers();
+  } else {
+    alert("Silme hatası");
+  }
+}
+
+/* ============================
+        MODAL AÇ/KAPA
+============================ */
+
+function openEdit(id, username, role) {
+  document.getElementById("edit_id").value = id;
+  document.getElementById("edit_username").value = username;
+  document.getElementById("edit_role").value = role;
+  document.getElementById("edit_password").value = "";
+
+  document.getElementById("editModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("editModal").style.display = "none";
+}
+
+/* ============================
+        KULLANICI GÜNCELLE
+============================ */
+
+async function updateUser() {
+  const id = edit_id.value;
+  const username = edit_username.value.trim();
+  const role = edit_role.value;
+  const password = edit_password.value.trim();
+
+  const res = await fetch("/api/updateUser/" + id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, role }),
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    alert("Kullanıcı güncellendi");
+    closeModal();
+    loadUsers();
+  } else {
+    alert("Hata: " + data.error);
+  }
+}
+
+loadUsers();
+
 </script>
 </body>
 </html>

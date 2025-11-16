@@ -1,60 +1,47 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<title>İş Takip Sistemi Giriş</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>İş Takip - Giriş</title>
 <style>
-body {
-  font-family: Arial;
-  background: linear-gradient(135deg, #2c003e, #ff6f00);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-}
-input, button {
-  padding: 12px;
-  margin: 10px;
-  border-radius: 6px;
-  border: none;
-}
-button {
-  background: #ff6f00;
-  color: white;
-  cursor: pointer;
-}
-button:hover { background: #e65c00; }
+  body{height:100vh;margin:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2c003e,#ff6f00);font-family:Arial;color:white}
+  .card{background:rgba(255,255,255,0.06);padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.25);width:320px}
+  h2{text-align:center;margin:0 0 16px}
+  input{width:100%;padding:10px;border-radius:8px;border:none;margin:8px 0;}
+  button{width:100%;padding:10px;background:#ff6f00;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer}
 </style>
 </head>
-
 <body>
-<h2>İş Takip Sistemi</h2>
-
-<input id="username" placeholder="Kullanıcı Adı">
-<input type="password" id="password" placeholder="Şifre">
-
-<button onclick="login()">Giriş Yap</button>
+  <div class="card">
+    <h2>İş Takip Sistemi</h2>
+    <input id="username" placeholder="Kullanıcı Adı" autocomplete="username">
+    <input id="password" type="password" placeholder="Şifre" autocomplete="current-password">
+    <button onclick="login()">Giriş Yap</button>
+    <p id="msg" style="color:#ffd8a8;margin-top:10px"></p>
+  </div>
 
 <script>
-async function login() {
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
+async function login(){
+  const user = document.getElementById("username").value.trim();
+  const pass = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
+  msg.textContent = "";
+  if(!user||!pass){ msg.textContent = "Kullanıcı adı ve şifre gerekli"; return; }
 
-  const res = await fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  });
-
-  const data = await res.json();
-
-  if (res.status !== 200) return alert(data.error);
-
-  if (data.role === "admin") window.location = "admin.html";
-  else window.location = "personel.html";
+  try{
+    const r = await fetch("/api/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ username: user, password: pass })
+    });
+    const j = await r.json();
+    if(!r.ok){ msg.textContent = j.error || "Giriş başarısız"; return; }
+    // Save username in sessionStorage for personel page auto-fill
+    sessionStorage.setItem("username", j.username);
+    if(j.role === "admin") location.href = "admin.html"; else location.href = "personel.html";
+  }catch(e){ msg.textContent = "Sunucu hatası: " + e.message; }
 }
 </script>
 </body>

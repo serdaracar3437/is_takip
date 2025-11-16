@@ -8,17 +8,19 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// ---------------------------
-// 🔗 Supabase Bağlantısı
-// ---------------------------
+// ======================================
+// SUPABASE BAĞLANTISI
+// ======================================
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-// ---------------------------
-// 🔐 Login
-// ---------------------------
+// ======================================
+// LOGIN
+// ======================================
+
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -30,14 +32,16 @@ app.post("/api/login", async (req, res) => {
     .maybeSingle();
 
   if (error) return res.status(500).json({ error: error.message });
-  if (!user) return res.status(401).json({ error: "Geçersiz giriş" });
+  if (!user) return res.status(401).json({ error: "Geçersiz kullanıcı" });
 
-  res.json({ username: user.username, role: user.role });
+  res.json({ role: user.role, username: user.username });
 });
 
-// ---------------------------
-// ➕ Kullanıcı Ekle
-// ---------------------------
+
+// ======================================
+// YENİ KULLANICI EKLE
+// ======================================
+
 app.post("/api/addUser", async (req, res) => {
   const { username, password, role } = req.body;
 
@@ -46,42 +50,102 @@ app.post("/api/addUser", async (req, res) => {
     .insert([{ username, password, role }]);
 
   if (error) return res.status(400).json({ error: error.message });
-
   res.json({ message: "Kullanıcı başarıyla eklendi" });
 });
 
-// ---------------------------
-// 👥 Personel Listeleme
-// ---------------------------
+
+// ======================================
+// TÜM PERSONELLERİ LİSTELE
+// ======================================
+
 app.get("/api/personel", async (req, res) => {
   const { data, error } = await supabase
     .from("users")
-    .select("username, role")
-    .eq("role", "personel");
+    .select("*");
 
   if (error) return res.status(500).json({ error: error.message });
+
   res.json(data);
 });
 
-// ---------------------------
-// 📝 Görev Kaydet
-// ---------------------------
-app.post("/api/tasks", async (req, res) => {
-  const task = req.body;
 
-  if (!task.username)
-    return res.status(400).json({ error: "Kullanıcı adı zorunludur" });
+// ======================================
+// KULLANICI SİL
+// ======================================
 
-  const { data, error } = await supabase.from("tasks").insert([task]);
+app.delete("/api/deleteUser/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", id);
 
   if (error) return res.status(400).json({ error: error.message });
 
-  res.json({ message: "Görev kaydedildi", data });
+  res.json({ message: "Kullanıcı silindi" });
 });
 
-// ---------------------------
-// 📄 Görev Listele (Filtreli)
-// ---------------------------
+
+// ======================================
+// KULLANICI GÜNCELLE
+// ======================================
+
+app.put("/api/updateUser/:id", async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role } = req.body;
+
+  const updateData = { username, role };
+
+  if (password && password.trim() !== "") {
+    updateData.password = password;
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) return res.status(400).json({ error: error.message });
+
+  res.json({ message: "Kullanıcı başarıyla güncellendi" });
+});
+
+
+// ======================================
+// TASK KAYDETME
+// ======================================
+
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const taskData = req.body;
+
+    if (!taskData.username) {
+      return res.status(400).json({ error: "Kullanıcı adı boş olamaz" });
+    }
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert([taskData]);
+
+    if (error) {
+      console.log("Supabase Insert ERROR:", error);
+      return res.status(500).json({ error: "Kayıt sırasında hata oluştu" });
+    }
+
+    res.json({ message: "Görev kaydedildi", data });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+
+// ======================================
+// TASK LİSTELEME + FİLTRE
+// ======================================
+
 app.get("/api/tasks", async (req, res) => {
   const { username, isemri_numarasi, tarih } = req.query;
 
@@ -91,15 +155,19 @@ app.get("/api/tasks", async (req, res) => {
   if (isemri_numarasi) query = query.ilike("isemri_numarasi", `%${isemri_numarasi}%`);
   if (tarih) query = query.eq("tarih", tarih);
 
-  const { data, error } = await query.order("tarih", { ascending: false });
+  const { data, error } = await query.order("id", { ascending: false });
 
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) return res.status(500).json({ error: error.message });
 
   res.json(data);
 });
 
-// ---------------------------
+// ======================================
+// HTML SERVE
+// ======================================
 
 app.use(express.static("public"));
 
-app.listen(PORT, () => console.log("SERVER READY →", PORT));
+app.listen(PORT, () =>
+  console.log(`SERVER READY → PORT ${PORT}`)
+);

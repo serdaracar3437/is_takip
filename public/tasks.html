@@ -1,81 +1,85 @@
+<!-- public/tasks.html -->
 <!DOCTYPE html>
-<div class="header">Görev Listesi</div>
-<div class="wrap">
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Görev Listesi</title>
+<style>
+  body{margin:0;font-family:Inter,Arial;background:#f4f6fc;color:#111}
+  .header{background:#2c003e;color:#fff;padding:20px;text-align:center;font-weight:700}
+  .wrap{max-width:1200px;margin:18px auto;padding:12px}
+  .panel{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  input{padding:10px;border-radius:8px;border:1px solid #ddd}
+  .btn{background:#ff6f00;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+  table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden}
+  th{background:#ff6f00;color:white;padding:12px;text-align:left}
+  td{padding:12px;border-top:1px solid #f1f1f1}
+  tr:hover td{background:#fff7ed}
+</style>
+</head>
+<body>
+  <div class="header">Görev Listesi</div>
+  <div class="wrap">
+    <div class="panel">
+      <input id="f_username" placeholder="Personel">
+      <input id="f_isemri" placeholder="İş Emri No">
+      <input id="f_tarih" type="date">
+      <button class="btn" onclick="loadTasks()">Filtrele</button>
+      <button class="btn" onclick="exportCSV()">CSV İndir</button>
+      <button class="btn" onclick="window.print()">PDF (Yazdır)</button>
+      <a class="btn" href="personel.html" style="text-decoration:none">Yeni Görev</a>
+    </div>
 
-
-<div class="filter">
-<input id="f_username" placeholder="Personel" />
-<input id="f_isemri" placeholder="İş Emri No" />
-<input id="f_tarih" type="date" />
-<button onclick="loadTasks()">Filtrele</button>
-<a href="personel.html" style="background:#2c003e;color:white;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:700;">Yeni Görev</a>
-</div>
-
-
-<table>
-<thead>
-<tr>
-<th>Personel</th>
-<th>İş Emri</th>
-<th>Ürün</th>
-<th>Tarih</th>
-<th>Faaliyet</th>
-<th>Adet</th>
-<th>Hata</th>
-</tr>
-</thead>
-<tbody id="taskTable"></tbody>
-</table>
-
-
-</div>
-
+    <div id="tableWrap">
+      <table>
+        <thead>
+          <tr><th>Personel</th><th>İş Emri</th><th>Ürün</th><th>Tarih</th><th>Faaliyet</th><th>Adet</th><th>Hata</th></tr>
+        </thead>
+        <tbody id="taskTable"></tbody>
+      </table>
+    </div>
+  </div>
 
 <script>
+// fetch & render
 async function loadTasks(){
-const q=new URLSearchParams({
-username:f_username.value.trim(),
-isemri_numarasi:f_isemri.value.trim(),
-tarih:f_tarih.value||""
-});
-
-
-const res=await fetch("/api/tasks?"+q.toString());
-const data=await res.json();
-const tbody=taskTable;
-tbody.innerHTML="";
-
-
-if(!Array.isArray(data)||data.length===0){
-tbody.innerHTML="<tr><td colspan='7' style='text-align:center;padding:20px;color:#777'>Kayıt bulunamadı</td></tr>";
-return;
+  const q = new URLSearchParams({
+    username: document.getElementById("f_username").value.trim(),
+    isemri_numarasi: document.getElementById("f_isemri").value.trim(),
+    tarih: document.getElementById("f_tarih").value || ""
+  });
+  try{
+    const res = await fetch("/api/tasks?" + q.toString());
+    if(!res.ok){ const e = await res.json().catch(()=>({error:"Sunucu"})); alert(e.error); return; }
+    const data = await res.json();
+    const tbody = document.getElementById("taskTable");
+    tbody.innerHTML = "";
+    if(!Array.isArray(data) || data.length === 0){ tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;padding:18px;color:#777'>Kayıt yok</td></tr>"; return; }
+    data.forEach(t=>{
+      const hatalar = [t.hata_kodu1?`${t.hata_kodu1} (${t.hata_sayisi1||0})`:"", t.hata_kodu2?`${t.hata_kodu2} (${t.hata_sayisi2||0})`:"", t.hata_kodu3?`${t.hata_kodu3} (${t.hata_sayisi3||0})`:""].filter(Boolean).join("<br>");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${t.username}</td><td>${t.isemri_numarasi||"-"}</td><td>${t.urun_kodu||"-"}</td><td>${t.tarih||"-"}</td><td>${t.yapilan_faaliyet||"-"}</td><td>${t.islem_adedi||"-"}</td><td>${hatalar||"-"}</td>`;
+      tbody.appendChild(tr);
+    });
+  }catch(e){ alert("Hata: " + e.message); }
 }
-
-
-data.forEach(t=>{
-const hatalar=[
-t.hata_kodu1?`${t.hata_kodu1} (${t.hata_sayisi1||0})`:null,
-t.hata_kodu2?`${t.hata_kodu2} (${t.hata_sayisi2||0})`:null,
-t.hata_kodu3?`${t.hata_kodu3} (${t.hata_sayisi3||0})`:null,
-].filter(Boolean).join("<br>");
-
-
-const tr=document.createElement("tr");
-tr.innerHTML=`
-<td>${t.username}</td>
-<td>${t.isemri_numarasi||"-"}</td>
-<td>${t.urun_kodu||"-"}</td>
-<td>${t.tarih||"-"}</td>
-<td>${t.yapilan_faaliyet||"-"}</td>
-<td>${t.islem_adedi||"-"}</td>
-<td>${hatalar||"-"}</td>
-`;
-tbody.appendChild(tr);
-});
-}
-
-
 loadTasks();
+
+// CSV export
+async function exportCSV(){
+  const tbody = document.getElementById("taskTable");
+  if(tbody.children.length === 0){ alert("İlk önce kayıtları yükleyin"); return; }
+  const rows = [["username","isemri_numarasi","urun_kodu","tarih","yapilan_faaliyet","islem_adedi","hata_kodlari"]];
+  for(const tr of tbody.children){
+    const cells = Array.from(tr.children).map(td => td.innerText.replace(/\n/g," ").replace(/\t/g," "));
+    rows.push(cells);
+  }
+  const csv = rows.map(r => r.map(c => `"${(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = "tasks_export.csv"; a.click(); URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
