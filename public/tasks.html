@@ -1,154 +1,150 @@
-<!-- public/tasks.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
 <title>Görev Listesi</title>
 
+<!-- Basit ve temiz bir tablo tasarımı -->
 <style>
-  body { margin:0; font-family:Inter,Arial; background:#f4f6fc; color:#111 }
-  .header { background:#2c003e; color:#fff; padding:20px; text-align:center; font-weight:700 }
-  .wrap { max-width:1400px; margin:18px auto; padding:12px }
-  .panel { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px }
-  input { padding:10px; border-radius:8px; border:1px solid #ddd }
-  .btn { background:#ff6f00; color:white; border:none; padding:10px 14px; border-radius:8px; cursor:pointer }
-  table { width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; font-size:14px }
-  th { background:#ff6f00; color:white; padding:10px; white-space:nowrap }
-  td { padding:10px; border-top:1px solid #f1f1f1; vertical-align:top }
-  tr:hover td { background:#fff7ed }
-  .edit-btn { background:#2c003e; color:white; padding:6px 10px; border-radius:6px; cursor:pointer; border:none }
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #f3f4f6;
+    }
+
+    h2 {
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    th {
+        background: #2563eb;
+        color: white;
+        padding: 10px;
+        text-align: left;
+        font-size: 14px;
+    }
+
+    td {
+        padding: 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+    }
+
+    tr:hover {
+        background: #f1f5f9;
+    }
+
+    button {
+        padding: 6px 12px;
+        background: #16a34a;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    button:hover {
+        background: #15803d;
+    }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-<div class="header">Görev Listesi</div>
 
-<div class="wrap">
+<h2>Görev Listesi</h2>
 
-  <!-- Filtre Alanı -->
-  <div class="panel">
-    <input id="f_username" placeholder="Personel">
-    <input id="f_isemri" placeholder="İş Emri No">
-    <input id="f_tarih" type="date">
-    <button class="btn" onclick="loadTasks()">Filtrele</button>
-    <button class="btn" onclick="exportCSV()">CSV İndir</button>
-    <button class="btn" onclick="window.print()">PDF (Yazdır)</button>
-    <a class="btn" href="personel.html" style="text-decoration:none">Yeni Görev</a>
-  </div>
+<table id="tasksTable">
+  <thead>
+    <tr>
+      <th>Kullanıcı</th>
+      <th>İş Emri No</th>
+      <th>Ürün Kodu</th>
+      <th>Tarih</th>
+      <th>Yapılan Faaliyet</th>
+      <th>Açıklama</th>
+      <th>Kullanılan Malzeme</th>
+      <th>Başlama</th>
+      <th>Bitiş</th>
+      <th>İşlem Adedi</th>
+      <th>Hata Kodu 1</th>
+      <th>Hata Sayısı 1</th>
+      <th>Hata Kodu 2</th>
+      <th>Hata Sayısı 2</th>
+      <th>Hata Kodu 3</th>
+      <th>Hata Sayısı 3</th>
+      <th>Düzenle</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <!-- Tablo -->
-  <table>
-    <thead>
-      <tr>
-        <th>Personel</th>
-        <th>İş Emri</th>
-        <th>Ürün</th>
-        <th>Tarih</th>
-        <th>Faaliyet</th>
-        <th>Açıklama</th>
-        <th>Malzeme</th>
-        <th>Başlama</th>
-        <th>Bitiş</th>
-        <th>Adet</th>
-        <th>Hata 1</th>
-        <th>Hata 2</th>
-        <th>Hata 3</th>
-        <th>Düzenle</th>
-      </tr>
-    </thead>
-    <tbody id="taskTable"></tbody>
-  </table>
 
-</div>
 
 <script>
-// Admin mi?
-const IS_ADMIN = new URLSearchParams(window.location.search).get("admin") === "true";
+const supabaseUrl = "SUPABASE_URL";     // 🔧 Buraya kendi URL'ni yaz
+const supabaseKey = "SUPABASE_ANON_KEY"; // 🔧 Buraya kendi anon key'ini yaz
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-// --------------------- LOAD TASKS ---------------------
+// Sayfa açıldığında görevleri yükle
+document.addEventListener("DOMContentLoaded", loadTasks);
+
 async function loadTasks() {
-  const q = new URLSearchParams({
-    username: f_username.value.trim(),
-    isemri_numarasi: f_isemri.value.trim(),
-    tarih: f_tarih.value || ""
-  });
+    const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("id", { ascending: false });
 
-  try {
-    const res = await fetch("/api/tasks?" + q);
-    if (!res.ok) {
-      const e = await res.json().catch(()=>({error:"Sunucu hatası"}));
-      alert(e.error);
-      return;
+    if (error) {
+        console.error("Görev yükleme hatası:", error);
+        return;
     }
 
-    const data = await res.json();
-    const tbody = document.getElementById("taskTable");
-    tbody.innerHTML = "";
+    const tableBody = document.querySelector("#tasksTable tbody");
+    tableBody.innerHTML = "";
 
-    if (!Array.isArray(data) || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:18px;color:#777">Kayıt yok</td></tr>`;
-      return;
-    }
+    data.forEach(task => {
+        const row = document.createElement("tr");
 
-    data.forEach(t => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${t.username}</td>
-        <td>${t.isemri_numarasi || "-"}</td>
-        <td>${t.urun_kodu || "-"}</td>
-        <td>${t.tarih || "-"}</td>
-        <td>${t.yapilan_faaliyet || "-"}</td>
-        <td>${t.aciklama || "-"}</td>
-        <td>${t.kullanilan_malzeme || "-"}</td>
-        <td>${t.baslama_saati || "-"}</td>
-        <td>${t.bitis_saati || "-"}</td>
-        <td>${t.islem_adedi || "-"}</td>
+        row.innerHTML = `
+            <td>${task.username || ""}</td>
+            <td>${task.isemri_numarasi || ""}</td>
+            <td>${task.urun_kodu || ""}</td>
+            <td>${task.tarih || ""}</td>
+            <td>${task.yapilan_faaliyet || ""}</td>
+            <td>${task.aciklama || ""}</td>
+            <td>${task.kullanilan_malzeme || ""}</td>
+            <td>${task.baslama_saati || ""}</td>
+            <td>${task.bitis_saati || ""}</td>
+            <td>${task.islem_adedi || ""}</td>
+            <td>${task.hata_kodu1 || ""}</td>
+            <td>${task.hata_sayisi1 || ""}</td>
+            <td>${task.hata_kodu2 || ""}</td>
+            <td>${task.hata_sayisi2 || ""}</td>
+            <td>${task.hata_kodu3 || ""}</td>
+            <td>${task.hata_sayisi3 || ""}</td>
+            <td>
+                <button onclick="editTask('${task.id}')">Düzenle</button>
+            </td>
+        `;
 
-        <td>${t.hata_kodu1 ? `${t.hata_kodu1} (${t.hata_sayisi1})` : "-"}</td>
-        <td>${t.hata_kodu2 ? `${t.hata_kodu2} (${t.hata_sayisi2})` : "-"}</td>
-        <td>${t.hata_kodu3 ? `${t.hata_kodu3} (${t.hata_sayisi3})` : "-"}</td>
-
-        <td>${
-          IS_ADMIN
-            ? `<button class="edit-btn" onclick="editTask(${t.id})">Düzenle</button>`
-            : ""
-        }</td>
-      `;
-      tbody.appendChild(tr);
+        tableBody.appendChild(row);
     });
-
-  } catch (e) {
-    alert("Hata: " + e.message);
-  }
 }
 
-loadTasks();
-
-// --------------------- CSV EXPORT ---------------------
-function exportCSV() {
-  const trs = [...document.querySelectorAll("#taskTable tr")];
-  if (trs.length === 0) { alert("Tablo boş"); return; }
-
-  const headers = [...document.querySelectorAll("thead th")].map(t=>t.innerText);
-  const rows = [headers];
-
-  trs.forEach(tr => {
-    rows.push([...tr.children].map(td => td.innerText.replace(/\n/g," ")));
-  });
-
-  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-  const blob = new Blob([csv], {type:"text/csv"});
-  
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "tasks.csv";
-  a.click();
-}
-
-// --------------------- EDIT ---------------------
 function editTask(id) {
-  window.location.href = "task_edit.html?id=" + id;
+    window.location.href = `edit-task.html?id=${id}`;
 }
 </script>
 

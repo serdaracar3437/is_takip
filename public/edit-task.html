@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Görev Düzenle</title>
+</head>
+<body>
+
+<h2>Görev Düzenleme</h2>
+
+<form id="editForm">
+    <label>İş Emri No:</label><br>
+    <input id="isemri" type="text"><br><br>
+
+    <label>Ürün Kodu:</label><br>
+    <input id="urun" type="text"><br><br>
+
+    <label>Tarih:</label><br>
+    <input id="tarih" type="date"><br><br>
+
+    <label>Yapılan Faaliyet:</label><br>
+    <input id="faaliyet" type="text"><br><br>
+
+    <label>Açıklama:</label><br>
+    <input id="aciklama" type="text"><br><br>
+
+    <button type="button" onclick="updateTask()">Kaydet</button>
+</form>
+
+<script>
+const supabaseUrl = "SUPABASE_URL";
+const supabaseKey = "SUPABASE_ANON_KEY";
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+const urlParams = new URLSearchParams(window.location.search);
+const taskId = urlParams.get("id");
+
+document.addEventListener("DOMContentLoaded", loadTask);
+
+async function loadTask() {
+    const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("id", taskId)
+        .single();
+
+    if (error) {
+        alert("Görev bulunamadı!");
+        return;
+    }
+
+    document.getElementById("isemri").value = data.isemri_numarasi || "";
+    document.getElementById("urun").value = data.urun_kodu || "";
+    document.getElementById("tarih").value = data.tarih || "";
+    document.getElementById("faaliyet").value = data.yapilan_faaliyet || "";
+    document.getElementById("aciklama").value = data.aciklama || "";
+}
+
+async function updateTask() {
+    const { error } = await supabase
+        .from("tasks")
+        .update({
+            isemri_numarasi: document.getElementById("isemri").value,
+            urun_kodu: document.getElementById("urun").value,
+            tarih: document.getElementById("tarih").value,
+            yapilan_faaliyet: document.getElementById("faaliyet").value,
+            aciklama: document.getElementById("aciklama").value,
+        })
+        .eq("id", taskId);
+
+    if (error) {
+        alert("Güncelleme hatası!");
+        console.error(error);
+        return;
+    }
+
+    alert("Görev başarıyla güncellendi!");
+    window.location.href = "task.html";
+}
+</script>
+
+</body>
+</html>
